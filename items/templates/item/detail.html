@@ -1,0 +1,9 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ item.name}}{% endblock %}
+
+{% block content %}
+    <div class="grid grid-col-5 gap-6">
+        <img class="rounded-xl" src="{{ items.image.url }}" alt="">
+    </div>
+{% endblock %}

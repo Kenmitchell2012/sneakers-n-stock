@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Welcome{% endblock %} | Puddle
+{% block content %}
+    <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
+        <h2 class="mb-12 text-2xl text-center">Newest items</h2>
+
+        <div class="grid grid-cols-3 gap-3">
+            {% for items in items %}
+                <div>
+                    <a href="{% url 'item:detail' items.id %}">
+                        <div>
+                            <img src="{{ items.image.url }}" alt="" class="rounded-t-xl">
+                        </div>
+                        <div class="p-6 bg-white rounded-b-xl">
+                            <h2 class="text-2xl">{{ items.name }}</h2>
+                            <p class="text-gray-500">Price: {{ items.price }}</p>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
+        <h2 class="mb-12 text-2xl text-center">Categories</h2>
+
+        <div class="grid grid-cols-3 gap-3">
+            {% for categories in categories %}
+            <div>
+                <a href="">
+                    <div class="p-6 bg-white rounded-b-xl">
+                        <h2 class="text-2xl">{{ categories.name }}</h2>
+                        <p class="text-gray-500">{{ categories.items.count }} Items</p>
+                    </div>
+                </a>
+            </div>
+
+            {% endfor %}
+
+        </div>
+    </div>
+
+{% endblock %}
