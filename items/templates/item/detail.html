@@ -6,4 +6,12 @@
     <div class="grid grid-col-5 gap-6">
         <img class="rounded-xl" src="{{ items.image.url }}" alt="">
     </div>
+
+    <div class="col-span-2 p-6 bg-gray-100 rounded-xl">
+        <h1 class="m6-6 text-3xl">{{ items.name }}</h1>
+        <p class="text-gray-500"><strong>Price:</strong>{{ items.price }}</p>
+        <p class="text-gray-500"><strong>Seller:</strong>{{ items.created_by.username}}</p>
+        <p class="text-gray-700"><strong>Description:</strong><br>{{ items.description }}</p>
+
+    </div>
 {% endblock %}
