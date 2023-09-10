@@ -4,4 +4,5 @@ from .models import Items
 
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
-    return render(request, 'item/detail.html', {'items': item})
+    related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:5]
+    return render(request, 'item/detail.html', {'items': item, 'related_items': related_items})
