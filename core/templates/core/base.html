@@ -19,22 +19,29 @@
     <footer class="py-6 px-6 flex justify-between bg-gray-500">
         <div class="w-2/3 pr-10">
             <h3 class="mb-5 font-semibold text-gray-400">About</h3>
-
+            <p class="text-gray-300">
+                SneakerzInStock is your one-stop shop for the latest and greatest in sneaker fashion. We provide a comprehensive selection of shoes for all tastes and styles. Our mission is to keep you updated with the hottest trends and ensure your feet stay stylish and comfortable.
+            </p>
         </div>
-        <div class="w1/3">
-            <h3 class="mb-5 font-semibold text-gray-400"></h3>
+        <div class="w-1/3">
+            <h3 class="mb-5 font-semibold text-gray-400">Links</h3>
             <ul class="space-y-2">
                 <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">About</a></li>
-                <li><a href="{%url 'core:contact'%}" class="text-lg text-teal-500 hover:text-teal-700">Contact</a></li>
+                <li><a href="{% url 'core:contact' %}" class="text-lg text-teal-500 hover:text-teal-700">Contact</a></li>
                 <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">Privacy</a></li>
                 <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">Terms of Use</a></li>
-
-
-
-
             </ul>
         </div>
     </footer>
+    <div class="py-4 bg-gray-600 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> KMitchell Programming. All rights reserved.</p>
+    </div>
+    
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+    
+    
 </body>
 </html>
 
