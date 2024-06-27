@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Inbox | SneakersInStock{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 md:px-8 lg:px-16">
+    <h1 class="mb-6 text-3xl font-semibold">Inbox</h1>
+
+    <div class="space-y-6">
+        {% for conversation in conversations %}
+            <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 pr-4">
+                        <img src="{{ conversation.item.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="">
+                    </div>
+
+                    <div class="flex-grow">
+                        {% for member in conversation.members.all %}
+                            {% if member != request.user %}
+                                <p class="mb-2 text-lg font-semibold text-gray-700">
+                                    {{ member.username }}
+                                    <span class="text-sm text-gray-500">| {{ conversation.updated_at }}</span>
+                                </p>
+                                <p class="text-gray-500">{{ conversation.item.name }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

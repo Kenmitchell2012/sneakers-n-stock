@@ -1,21 +1,30 @@
 {% extends 'core/base.html' %}
 
-{% block title %}My Items{% endblock %} | Puddle
-{% block content %}
-    <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
-        <h2 class="mb-12 text-2xl text-center">My Items</h2>
+{% block title %}My Items | Puddle{% endblock %}
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {% for items in items %}
-                <div class="bg-white rounded-xl overflow-hidden shadow-lg">
-                    <a href="{% url 'item:detail' items.id %}">
-                        <img src="{{ items.image.url }}" alt="" class="w-full h-48 object-cover">
-                        <div class="p-6">
-                            <h2 class="text-xl font-bold">{{ items.name| upper }}</h2>
-                            <p class="text-gray-500 mt-2">Price: {{ items.price }}</p>
+{% block content %}
+<div class="container mx-auto px-4 md:px-8 lg:px-16 mt-6 py-6 bg-gray-100 rounded-xl">
+    <h2 class="mb-6 text-3xl font-semibold text-center">My Items</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% if items %}
+            {% for item in items %}
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
+                    <a href="{% url 'item:detail' item.id %}">
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
+                        <div class="p-4 text-center">
+                            <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
+                            <p class="text-gray-500 mt-2">Price: {{ item.price|floatformat:2 }}</p>
                         </div>
                     </a>
                 </div>
             {% endfor %}
-        </div>
+        {% else %}
+            <div class="text-center col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4">
+                <p class="text-xl text-gray-700">You don't have any items yet.</p>
+                <a href="{% url 'item:new' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full mt-4">Add Item</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

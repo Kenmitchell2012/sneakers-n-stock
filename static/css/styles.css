@@ -1,0 +1,11 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+footer {
+    background-color: #4A5568; /* bg-gray-600 */
+    color: #CBD5E0; /* text-gray-400 */
+    text-align: center;
+    padding: 1rem;
+}
