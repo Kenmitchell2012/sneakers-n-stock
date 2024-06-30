@@ -3,47 +3,49 @@
 {% block title %} Items | SneakerzInStock {% endblock %}
 
 {% block content %}
-    <div class="bg-gray-100 pb-6 px-4 md:px-8 lg:px-16">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <div class="col-span-1">
-                <form method="get" action="{% url 'item:items' %}" class="mt-4">
-                    <input name="query" class="w-full py-2 px-4 border rounded-xl" type="text" value="{{ query }}" placeholder="Find an item..">
-                    <button class="mt-2 w-full py-2 px-4 text-lg bg-teal-500 text-white rounded-xl hover:bg-teal-600">Search</button>
-                </form>
-                <hr class="my-6">
-                <p class="font-semibold text-gray-700">Categories</p>
-                <ul>
-                    {% for category in categories %}
-                        <li class="mt-2">
-                            <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
-                               class="block px-4 py-2 rounded-xl {% if category.id == category_id %} bg-gray-200 {% else %} hover:bg-gray-100 {% endif %}">
-                                {{ category.name }}
-                            </a>
+    <div class="bg-gray-100 pb-6 px-4 md:px-8 lg:px-16 mt-6">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div class="col-span-1">
+                    <form method="get" action="{% url 'item:items' %}" class="mt-4">
+                        <input name="query" class="w-full py-2 px-4 border rounded-xl" type="text" value="{{ query }}" placeholder="Find an item..">
+                        <button class="mt-2 w-full py-2 px-4 text-lg bg-teal-500 text-white rounded-xl hover:bg-teal-600">Search</button>
+                    </form>
+                    <hr class="my-6">
+                    <p class="font-semibold text-gray-700">Categories</p>
+                    <ul>
+                        {% for category in categories %}
+                            <li class="mt-2">
+                                <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
+                                   class="block px-4 py-2 rounded-xl {% if category.id == category_id %} bg-gray-200 {% else %} hover:bg-gray-100 {% endif %}">
+                                    {{ category.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <hr class="my-6">
+                    <p class="font-semibold">Clear Filters</p>
+                    <ul>
+                        <li>
+                           <a href="{% url 'item:items' %}" class="mt-4 py-4 px-8 inline-block bg-yellow-500 text-lg rounded-xl text-white">Clear</a> 
                         </li>
-                    {% endfor %}
-                </ul>
-                <hr class="my-6">
-                <p class="font-semibold">Clear Filters</p>
-                <ul>
-                    <li>
-                       <a href="{% url 'item:items' %}" class="mt-4 py-4 px-8 inline-block bg-yellow-500 text-lg rounded-xl text-white">Clear</a> 
-                    </li>
-                </ul>
-            </div>
+                    </ul>
+                </div>
 
-            <div class="col-span-1 lg:col-span-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {% for item in items %}
-                        <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
-                            <a href="{% url 'item:detail' item.id %}">
-                                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
-                                <div class="p-4">
-                                    <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
-                                    <p class="text-gray-500 mt-1">Price: ${{ item.price|floatformat:2 }}</p>
-                                </div>
-                            </a>
-                        </div>
-                    {% endfor %}
+                <div class="col-span-1 lg:col-span-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {% for item in items %}
+                            <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
+                                <a href="{% url 'item:detail' item.id %}">
+                                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
+                                    <div class="p-4">
+                                        <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
+                                        <p class="text-gray-500 mt-1">Price: ${{ item.price|floatformat:2 }}</p>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>

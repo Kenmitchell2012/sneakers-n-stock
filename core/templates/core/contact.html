@@ -1,9 +1,21 @@
 {% extends 'core/base.html' %}
 
+{% block title %}Contact{% endblock %} | SneakerzInStock
 
-
-{% block title %}Contact{% endblock %} | Puddle
 {% block content %}
-    <h1>The Contact Page</h1>
+<div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
+    <h2 class="mb-12 text-2xl text-center">Social Media Links</h2>
 
+    <div class="flex justify-center space-x-6">
+        <a href="https://www.linkedin.com/" target="_blank" class="text-gray-700 hover:text-gray-900">
+            <i class="fab fa-linkedin fa-3x"></i>
+        </a>
+        <a href="https://github.com/Kenmitchell2012" target="_blank" class="text-gray-700 hover:text-gray-900">
+            <i class="fab fa-github fa-3x"></i>
+        </a>
+        <a href="#" target="_blank" class="text-gray-700 hover:text-gray-900">
+            <i class="fas fa-globe fa-3x"></i>
+        </a>
+    </div>
+</div>
 {% endblock %}

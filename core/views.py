@@ -11,6 +11,8 @@ from items.models import Category, Items
 def index(request):
     items = Items.objects.filter(is_sold=False)[0:6]
     categories = Category.objects.all()
+    items = Items.objects.filter(is_sold=False).order_by('-created_at')
+
     return render(request, 'core/index.html', {'items':items, 'categories':categories,})
 
 def contact(request):
