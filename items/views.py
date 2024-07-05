@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .forms import EditItemForm, NewItemForm
 from .models import Items, Category
+
+from conversation.models import Conversation
 # Create your views here.
 
 
@@ -31,8 +33,10 @@ def items(request):
 
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
     related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:5]
-    return render(request, 'item/detail.html', {'items': item, 'related_items': related_items})
+    return render(request, 'item/detail.html', {'items': item, 'related_items': related_items, 'conversation_count': conversation_count})
 
 
 @login_required

@@ -1,0 +1,30 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+footer {
+    background-color: #4A5568; /* bg-gray-600 */
+    color: #CBD5E0; /* text-gray-400 */
+    text-align: center;
+    padding: 1rem;
+}
+
+
+
+body {
+    padding-top: 0px; /* Adjust based on the height of your navbar */
+}
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.5;
+}
+
+.group:hover .bg-gray-100 {
+    background-color: #e2e8f0; /* Slightly darker color */
+}
+
+.group-hover:block {
+    display: block !important;
+}

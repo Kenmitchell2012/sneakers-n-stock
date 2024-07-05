@@ -11,7 +11,26 @@
     <title>{% block title %}{% endblock %} | SneakerzInStock</title>
 </head>
 <body>
+
+
     {% include 'core/navbar.html' %}
+       <!-- Messages -->
+       {% if messages %}
+       <div class="my-4">
+           {% for message in messages %}
+               <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md" role="alert">
+                   <div class="flex">
+                       <div>
+                           <p class="text-sm">{{ message }}</p>
+                       </div>
+                   </div>
+               </div>
+           {% endfor %}
+       </div>
+       {% endif %}
+    
+    
+
     <div class="px-6 py-6">
         {% block content %}
 

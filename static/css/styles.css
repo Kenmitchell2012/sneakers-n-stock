@@ -11,6 +11,12 @@ footer {
 }
 
 
+
 body {
-    padding-top: 70px; /* Adjust based on the height of your navbar */
+    padding-top: 0px; /* Adjust based on the height of your navbar */
+}
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.5;
 }

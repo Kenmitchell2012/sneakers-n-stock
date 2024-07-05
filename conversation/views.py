@@ -10,16 +10,19 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 
 
+
 @login_required
 def new_conversation(request, item_pk):
     item = get_object_or_404(Items, pk=item_pk)
 
     if item.created_by == request.user:
+        messages.info(request, 'You cannot start a conversation with yourself.')
         return redirect('conversations:detail', pk=conversations.first().id)
     
     conversations = Conversation.objects.filter(item=item).filter(members__in=[request.user.id])
     if conversations.exists():
         conversation = conversations.first()
+        messages.info(request, 'You already have a conversation about this item.')
         return redirect('conversations:detail', pk=conversation.pk)
 
     if request.method == 'POST':
@@ -36,21 +39,26 @@ def new_conversation(request, item_pk):
             conversation_message.save()
 
             messages.success(request, 'Your message has been posted and a new conversation has been started.')
-            return redirect('item:detail', pk=item.pk)
+            return redirect('conversations:detail', pk=conversation.pk)
     else:
         form = ConversationMessagesForm()
+    
     return render(request, 'conversation/new.html', {'form': form})
+
 
 
 @login_required
 def inbox(request):
-    conversations = Conversation.objects.filter(members__in=[request.user.id])
-    return render(request, 'conversation/inbox.html', {'conversations': conversations})
+    conversations = Conversation.objects.filter(members__in=[request.user.id]).order_by('-updated_at')
+    conversation_count = conversations.count()
+    return render(request, 'conversation/inbox.html', {'conversations': conversations, 'conversation_count': conversation_count})
 
 
 @login_required
 def detail(request, pk):
     conversation = get_object_or_404(Conversation, pk=pk, members__in=[request.user.id])
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
 
     if request.method == 'POST':
         form = ConversationMessagesForm(request.POST)
@@ -63,8 +71,12 @@ def detail(request, pk):
     else:
         form = ConversationMessagesForm()
 
-    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form})
+    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form, 'conversation_count': conversation_count})
 
 
 
-    
+@login_required
+def delete(request, pk):
+    conversation = get_object_or_404(Conversation, pk=pk, members__in=[request.user.id])
+    conversation.delete()
+    return redirect('conversations:inbox')

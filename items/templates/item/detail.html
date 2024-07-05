@@ -11,7 +11,9 @@
     <div class="mt-6 col-span-2 p-6 bg-gray-100 rounded-xl">
         <h1 class="m6-6 text-3xl">{{ items.name | upper }}</h1>
         <p class="text-gray-500 text-2xl"><strong>Price: </strong>${{ items.price|floatformat:2 }}</p>
-        <p class="text-gray-500"><strong>Seller: </strong>{{ items.created_by.username}}</p>
+        <p class="text-gray-500"><strong>Seller: </strong>
+            <a href="{% url 'dashboard:index' items.created_by.username %}" class="text-teal-500 hover:underline">{{ items.created_by.username }}</a>
+        </p>
         <p class="text-gray-700"><strong>Description: </strong><br>{{ items.description }}</p>
 
         {% if request.user == items.created_by %}
@@ -33,18 +35,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {% if related_items %}
                 {% for items in related_items %}
-                <div class="bg-white rounded-xl overflow-hidden shadow-lg">
-                    <a href="{% url 'item:detail' items.id %}">
-                        <img src="{{ items.image.url }}" alt="" class="w-full h-48 object-cover">
-                        <div class="p-6">
-                            <h2 class="text-xl font-bold">{{ items.name| upper }}</h2>
-                            <p class="text-gray-500 mt-2">Price: ${{ items.price|floatformat:2 }}</p>
-                        </div>
-                    </a>
-                </div>
+                    <div class="bg-white rounded-xl overflow-hidden shadow-lg">
+                        <a href="{% url 'item:detail' items.id %}">
+                            <img src="{{ items.image.url }}" alt="" class="w-full h-48 object-cover">
+                            <div class="p-6">
+                                <h2 class="text-xl font-bold">{{ items.name| upper }}</h2>
+                                <p class="text-gray-500 mt-2">Price: ${{ items.price|floatformat:2 }}</p>
+                            </div>
+                        </a>
+                    </div>
                 {% endfor %}
             {% else %}
-                <p class="text-center">No related items</p>
+                <div class="text-center col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4">
+                    <p class="text-xl text-gray-700">No related items yet</p>
+                    <a href="{% url 'item:new' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full mt-4">Add Item</a>
+                </div>
             {% endif %}
         </div>
         

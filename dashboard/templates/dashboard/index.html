@@ -14,7 +14,7 @@
                         <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
                         <div class="p-4 text-center">
                             <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
-                            <p class="text-gray-500 mt-2">Price: {{ item.price|floatformat:2 }}</p>
+                            <p class="text-gray-500 mt-2">${{ item.price|floatformat:2 }}</p>
                         </div>
                     </a>
                 </div>
