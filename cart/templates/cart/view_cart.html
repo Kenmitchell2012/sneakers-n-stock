@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+{% load cart_extras %}
+
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl mb-6 font-semibold text-center">
+        Your Cart 
+        {% if cart.items.count > 0 %}
+            <a href="{% url 'cart:clear_cart' %}" class="text-red-500 hover:text-red-700 text-sm">Clear Cart</a>
+        {% endif %}
+    </h1>
+
+    {% if cart.items.all %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="lg:col-span-2 bg-gray-100 p-6 rounded-xl">
+                <ul>
+                    {% for cart_item in cart.items.all %}
+                    <li class="flex flex-col md:flex-row items-center mb-6 bg-white p-4 rounded-xl shadow">
+                        {% if cart_item.item.images.all %}
+                            <img src="{{ cart_item.item.images.all.0.image.url }}" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 md:mb-0">
+                        {% else %}
+                            <img src="path/to/placeholder/image.jpg" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 md:mb-0">
+                        {% endif %}
+                        <div class="flex-1 text-center md:text-left">
+                            <h2 class="text-xl font-semibold">{{ cart_item.item.name }}</h2>
+                            <p class="text-gray-500">Quantity: {{ cart_item.quantity }}</p>
+                            <p class="text-gray-700">Price: ${{ cart_item.item.price|floatformat:2 }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-semibold">Total: ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
+                            <form action="{% url 'cart:remove_from_cart' cart_item.item.id %}" method="post" class="mt-2">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-500 hover:text-red-700">Remove</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="lg:col-span-2 flex justify-end mt-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg w-full lg:w-1/2">
+                    <h2 class="text-2xl font-semibold mb-4">Order Summary</h2>
+                    <p class="text-lg">Total Items: {{ cart.items.count }}</p>
+                    <p class="text-lg font-semibold">Total Price: ${{ cart.calculate_total_price|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-lg text-center">Your cart is empty.</p>
+    {% endif %}
+</div>
+{% endblock %}

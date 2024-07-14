@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .forms import EditItemForm, NewItemForm
-from .models import Items, Category
+from .models import Items, Category, ItemImage
+from cart.models import Cart, CartItem
+from cart.forms import AddToCartForm
+from .forms import NewItemForm
 
 from conversation.models import Conversation
 # Create your views here.
@@ -31,27 +34,57 @@ def items(request):
 
 
 
+@login_required
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
+    # Get the cart item count for the authenticated user
+
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item_count = cart.items.count()
     related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:5]
-    return render(request, 'item/detail.html', {'items': item, 'related_items': related_items, 'conversation_count': conversation_count})
+    
+    if request.method == 'POST':
+        form = AddToCartForm(request.POST)
+        if form.is_valid():
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            quantity = form.cleaned_data['quantity']
+            cart_item, created = CartItem.objects.get_or_create(cart=cart, item=item)
+            cart_item.quantity += quantity
+            cart_item.save()
+            return redirect('cart:view_cart')  # Adjust the redirect to your cart view
+    else:
+        form = AddToCartForm()
+    
+    context = {
+        'item': item,
+        'related_items': related_items,
+        'conversation_count': conversation_count,
+        'form': form,
+        'cart_item_count': cart_item_count,
+    }
+    return render(request, 'item/detail.html', context)
 
 
 @login_required
 def new(request):
     if request.method == 'POST':
-        form = NewItemForm(request.POST, request.FILES)
+        item_form = NewItemForm(request.POST)
         
-        if form.is_valid():
-            item = form.save(commit=False)
+        if item_form.is_valid():
+            item = item_form.save(commit=False)
             item.created_by = request.user
             item.save()
+
+            for image in request.FILES.getlist('images'):
+                ItemImage.objects.create(item=item, image=image)
+
             return redirect('item:detail', pk=item.id)
     else:
-        form = NewItemForm
-    return render(request, 'item/form.html', {'form': form,'title': 'New Item'},)
+        item_form = NewItemForm()
+
+    return render(request, 'item/form.html', {'item_form': item_form, 'title': 'New Item'})
 
 @login_required
 def edit(request, pk):

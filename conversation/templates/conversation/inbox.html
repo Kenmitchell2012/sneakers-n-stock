@@ -1,5 +1,5 @@
 {% extends 'core/base.html' %}
-
+{% load static %}
 {% block title %}Inbox | SneakersInStock{% endblock %}
 
 {% block content %}
@@ -15,7 +15,11 @@
                 <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 pr-4">
-                            <img src="{{ conversation.item.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="">
+                            {% if conversation.item.images.exists %}
+                                <img src="{{ conversation.item.images.first.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="{{ conversation.item.name }}">
+                            {% else %}
+                                <img src="{% static 'media/item_images/images.png' %}" class="w-20 h-20 rounded-xl object-cover" alt="Placeholder">
+                            {% endif %}
                         </div>
 
                         <div class="flex-grow">

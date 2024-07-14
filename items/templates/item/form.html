@@ -3,24 +3,50 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1 class="mb-6 text-3xl">{{ title }}</h1>
-    <form enctype="multipart/form-data" method="post" action=".">
-        {% csrf_token %}
-
-        <div class="space-y-4">
-            {{ form.as_p }}
-        </div>
-        {% if form.errors or form.non_field_errors %}
-                <div class="mb-3 p-6 bg-red-100 rounded-xl">
-                    {% for field in forms %}
-                        {{ field.errors }}
+<div class="max-w-2xl mx-auto py-6 px-6 bg-white rounded-xl shadow-md">
+    <h1 class="text-2xl font-semibold mb-4">{{ title }}</h1>
+    
+    {% if form.errors %}
+        <div class="mb-4 text-red-500">
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
                     {% endfor %}
-
-                    {{ form.non_field_errors }}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ item_form.as_p }}
+        {{ image_form.as_p }}
+        
+        {% for form in formset %}
+            {% if form.errors %}
+                <div class="mb-4 text-red-500">
+                    <ul>
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
                 </div>
             {% endif %}
-            <button class="mt-5 py-6 px-8 text-lg bg-teal-500 text-white hover:bg-teal-700 rounded-xl">Submit</button>
-
+            {{ form.as_p }}
+        {% endfor %}
         
+        <div class="mt-4">
+            <button type="submit" class="w-full py-2 px-4 bg-teal-500 text-white rounded-xl hover:bg-teal-700">Save</button>
+        </div>
     </form>
+</div>
 {% endblock %}
