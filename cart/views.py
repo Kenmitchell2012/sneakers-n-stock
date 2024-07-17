@@ -104,6 +104,16 @@ def clear_cart(request):
     # Redirect back to the cart view
     return redirect('cart:view_cart')
 
+@login_required
+def update_quantity(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    if request.method == 'POST':
+        quantity = request.POST.get('quantity')
+        if quantity and int(quantity) > 0:
+            cart_item.quantity = int(quantity)
+            cart_item.save()
+    return redirect('cart:view_cart')
+
 
 
 @login_required

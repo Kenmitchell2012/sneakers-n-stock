@@ -3,11 +3,12 @@
 {% block title %}Conversation | SneakersInStock{% endblock %}
 
 {% block content %}
-<h1 class="mt-6 mb-6 text-3xl text-center">Conversation about {{ conversation.item.name}}</h1>
 
 
 
 <div class="max-w-3xl mx-auto space-y-6">
+    <h1 class="mt-6 mb-6 text-3xl text-center">Conversation about {{ conversation.item.name}}</h1>
+
     {% for message in conversation.messages.all %}
         <div id="message_{{ message.id }}" class="flex {% if message.created_by == request.user %}justify-end{% else %}justify-start{% endif %}">
             <div class="p-6 {% if message.created_by == request.user %}bg-blue-100{% else %}bg-gray-100{% endif %} rounded-xl max-w-lg">

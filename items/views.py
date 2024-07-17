@@ -33,7 +33,6 @@ def items(request):
         })
 
 
-
 @login_required
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)

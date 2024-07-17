@@ -37,7 +37,7 @@
                     {% for item in items %}
                         <div class="mt-6 bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
                             <a href="{% url 'item:detail' item.id %}">
-                                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-64 object-cover"> <!-- Increased height for better visual balance -->
+                                <img src="{{ item.images.first.image.url }}" alt="{{ item.name }}" class="w-full h-64 object-cover"> <!-- Increased height for better visual balance -->
                                 <div class="p-4">
                                     <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
                                     <p class="text-gray-500 mt-1">${{ item.price|floatformat:2 }}</p>
