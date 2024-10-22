@@ -32,7 +32,7 @@ The Sneaker Marketplace is a web application built with **HTML**, **Bootstrap**,
 2. Create a virtual environment and install the dependencies:
    ```bash
    python3 -m venv venv
-   source venv/bin/activate
+   source env/bin/activate
    pip install -r requirements.txt
    ```
 
