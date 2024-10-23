@@ -11,8 +11,6 @@ from conversation.models import Conversation
 # Create your views here.
 
 
-
-
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)
@@ -25,11 +23,16 @@ def items(request):
     if query:
         items = items.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(price__icontains=query))
 
+    # Handle conversations
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
+
     return render(request, 'item/items.html', {
         'items': items,
         'query': query,
         'categories': categories,
         'category_id': int(category_id),
+        'conversation_count': conversation_count,
         })
 
 
@@ -82,8 +85,12 @@ def new(request):
             return redirect('item:detail', pk=item.id)
     else:
         item_form = NewItemForm()
+    
+    # get conversation count
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
 
-    return render(request, 'item/form.html', {'item_form': item_form, 'title': 'New Item'})
+    return render(request, 'item/form.html', {'item_form': item_form, 'title': 'New Item', 'conversation_count': conversation_count,})
 
 @login_required
 def edit(request, pk):

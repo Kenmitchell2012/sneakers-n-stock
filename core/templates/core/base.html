@@ -15,21 +15,30 @@
     {% include 'core/navbar.html' %}
     
     {% if messages %}
-    <div class="my-4">
-        {% for message in messages %}
-            <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md" role="alert">
-                <div class="flex">
-                    <div>
-                        <p class="text-sm">{{ message }}</p>
+        <div class="my-4">
+            {% for message in messages %}
+                <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md relative" role="alert">
+                    <div class="flex justify-between items-center">
+                        <div class="mx-auto">
+                            <p class="text-md text-center">{{ message }}</p>
+                        </div>
+                        <button class="text-teal-500 focus:outline-none absolute top-0 right-0 mt-2 mr-2" onclick="this.parentElement.parentElement.style.display='none';">
+                            <svg class="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <title>Close</title>
+                                <path d="M14.348 14.849a1 1 0 010 1.414l-.02.02a1 1 0 01-1.414 0L10 12.414l-2.914 2.914a1 1 0 01-1.414-1.414L8.586 10 5.672 7.086a1 1 0 011.414-1.414L10 8.586l2.914-2.914a1 1 0 011.414 1.414L11.414 10l2.934 2.934z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+        </div>
     {% endif %}
+
+
 
     <div class="px-6 py-6">
         {% block content %}
+        
         {% endblock %}
     </div>
 

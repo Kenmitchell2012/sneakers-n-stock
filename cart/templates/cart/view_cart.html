@@ -25,7 +25,7 @@
                         {% endif %}
                         <div class="flex-1 text-center md:text-left">
                             <h2 class="text-xl font-semibold">{{ cart_item.item.name }}</h2>
-                            <form action="{% url 'cart:update_quantity' cart_item.item.id %}" method="post" class="flex items-center mt-2">
+                            <form action="{% url 'cart:update_quantity' cart_item.id %}" method="post" class="flex items-center mt-2">
                                 {% csrf_token %}
                                 <label for="quantity" class="mr-2">Quantity:</label>
                                 <input type="number" name="quantity" value="{{ cart_item.quantity }}" min="1" class="w-16 text-center border rounded" required>

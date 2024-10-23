@@ -1,9 +1,22 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Welcome{% endblock %} | Puddle
+{% block title %}Welcome{% endblock %} | Sneakerz-N-Stock
+
 {% block content %}
-    <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
+    <!-- Video and Image Banner Section -->
+    <div class="relative mb-12">
+        <video autoplay muted loop class="w-full h-auto object-cover">
+            <source src="{% static 'media/item_images/home.mp4' %}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        
+        <!-- Overlay Image -->
+        <img src="{% static 'media/item_images/nikecrazy.gif' %}" alt="Banner" class="absolute top-0 left-0 w-full h-full object-cover opacity-75">
+    </div>
+
+    <!-- section showing newest items -->
+    <div class="mt-20 px-6 py-12 bg-gray-100 rounded-xl">
         <h2 class="mb-12 text-2xl text-center">Newest items</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -16,7 +29,7 @@
                             <img src="{% static 'media/item_images/images.png' %}" alt="" class="w-full h-48 object-cover">
                         {% endif %}
                         <div class="p-6">
-                            <h2 class="text-xl font-bold">{{ item.name| upper }}</h2>
+                            <h2 class="text-xl font-bold">{{ item.name|upper }}</h2>
                             <p class="text-gray-500 mt-2">${{ item.price|floatformat:2 }}</p>
                         </div>
                     </a>
@@ -26,6 +39,7 @@
         </div>
     </div>
 
+    {% comment %} category section {% endcomment %}
     <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
         <h2 class="mb-12 text-2xl text-center">Categories</h2>
 

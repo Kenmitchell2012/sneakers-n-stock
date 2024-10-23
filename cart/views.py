@@ -86,6 +86,7 @@ def remove_from_cart(request, item_id):
 
     # Delete the cart item
     cart_item.delete()
+    messages.success(request, 'Item removed from cart successfully.')
 
     return redirect('cart:view_cart')  # Redirect to cart view after deletion
 
@@ -100,6 +101,7 @@ def clear_cart(request):
 
     # Delete all cart items
     cart_items.delete()
+    messages.success(request, 'Cart cleared successfully.')
 
     # Redirect back to the cart view
     return redirect('cart:view_cart')
@@ -112,6 +114,7 @@ def update_quantity(request, item_id):
         if quantity and int(quantity) > 0:
             cart_item.quantity = int(quantity)
             cart_item.save()
+            messages.success(request, 'Quantity updated successfully.')
     return redirect('cart:view_cart')
 
 
