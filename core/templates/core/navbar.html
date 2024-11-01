@@ -12,7 +12,9 @@
                 <a href="{% url 'conversations:inbox' %}" class="px-6 py-3 text-lg font-semibold bg-teal-500 text-white rounded-xl hover:bg-teal-700">Inbox
                     <span class="text-md text-white-500">({{ conversation_count }})</span>
                 </a>
+                <a href="{% url 'core:update_user' %}" class="px-6 py-3 text-lg font-semibold bg-gray-500 text-white rounded-xl hover:bg-gray-700">Update Profile</a>
                 <a href="{% url 'core:logout_user' %}" class="px-6 py-3 text-lg font-semibold bg-red-500 text-white rounded-xl hover:bg-red-700">Log Out</a>
+
                 <a href="{% url 'cart:view_cart' %}" class="relative">
                     <i class="fa-solid fa-cart-shopping fa-lg text-gray-700"></i>
                     {% if cart_item_count > 0 %}
