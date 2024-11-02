@@ -65,47 +65,48 @@ def signup(request):
 def user_profile(request):
     pass
 
-def update_user(request):
+def update_user(request): 
     if request.user.is_authenticated:
-        # Get the current user
         current_user = User.objects.get(id=request.user.id)
 
-        # handle conversations
+        # Conversations
         conversations = Conversation.objects.filter(members__in=[request.user.id])
         conversation_count = conversations.count()
 
-        # Try to retrieve the user's shipping address or initialize a new instance if not found
-        try:
-            shipping_user = ShippingAddress.objects.get(user=current_user)
-        except ShippingAddress.DoesNotExist:
-            shipping_user = ShippingAddress(user=current_user)  # Create a new instance for the user
+        # Retrieve or create the user's shipping address
+        shipping_user, created = ShippingAddress.objects.get_or_create(user=current_user)
 
-        # Get the user's edit form and shipping address edit form
+        # Forms
         user_form = EditProfileForm(request.POST or None, instance=current_user)
         shipping_form = ShippingAddressForm(request.POST or None, instance=shipping_user)
 
-        if user_form.is_valid() and shipping_form.is_valid():
-            user_form.save()
-            shipping_form.save()  # Save the shipping address
+        if request.method == 'POST':
+            print(user_form.errors)  # Debug: Print user form errors
+            print(shipping_form.errors)  # Debug: Print shipping form errors
 
-            login(request, current_user)
-            messages.success(request, 'Your profile has been updated successfully.')
-            return redirect('core:index')
+            if user_form.is_valid() and shipping_form.is_valid():
+                user_form.save()
+                shipping_form.save()
+                
+                login(request, current_user)
+                messages.success(request, 'Your profile has been updated successfully.')
+                return redirect('core:index')  # Keep for redirect after successful save
 
-        # Get the cart item count for the authenticated user
+        # Cart item count for user
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_item_count = cart.items.count()
-        
+
         return render(request, "core/update_user.html", {
             'user_form': user_form, 
             'shipping_form': shipping_form, 
             'conversation_count': conversation_count,
             'cart_item_count': cart_item_count,
-            })
+        })
     
     else:
         messages.error(request, "You must be logged in to access that page!")
         return redirect('home')
+
 
 
 def shipping_address(request):

@@ -6,8 +6,6 @@ class ShippingAddressForm(forms.ModelForm):
         model = ShippingAddress
         fields = ('shipping_full_name', 'shipping_email', 'shipping_address', 'shipping_city', 'shipping_state', 'shipping_zip_code', 'shipping_country', 'shipping_phone_number')
 
-        exclude = ['user',]
-
     shipping_full_name = forms.CharField(widget=forms.TextInput(attrs={
         'placeholder': 'Full Name',
         'class': 'w-full py-4 px-6 rounded-xl',

@@ -6,7 +6,7 @@
     <div class="p-6 w-full md:w-2/3 my-6 mx-auto bg-gray-100 rounded-xl">
         <h1 class="mb-6 text-3xl text-center md:text-left">Update User Profile</h1>
 
-        <form action="#" method="post">
+        <form action="{% url 'core:update_user' %}" method="post">
             {% csrf_token %}
             <div class="flex flex-col md:flex-row gap-6">
                 <!-- Left Column: User Information -->
@@ -32,21 +32,38 @@
                 <!-- Right Column: Shipping Information -->
                 <div class="w-full md:w-1/2">
                     <div class="mb-4">
+                        <label class="inline-block mb-2">Full Name</label><br>
+                        {{ shipping_form.shipping_full_name }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="inline-block mb-2">Shipping Email</label><br>
+                        {{ shipping_form.shipping_email }}
+                    </div>
+                    <div class="mb-4">
                         <label class="inline-block mb-2">Shipping Address</label><br>
                         {{ shipping_form.shipping_address }}
                     </div>
                     <div class="mb-4">
-                        <label class="inline-block mb-2">City</label><br>
+                        <label class="inline-block mb-2">Shipping City</label><br>
                         {{ shipping_form.shipping_city }}
                     </div>
                     <div class="mb-4">
-                        <label class="inline-block mb-2">State</label><br>
+                        <label class="inline-block mb-2">Shipping State</label><br>
                         {{ shipping_form.shipping_state }}
                     </div>
                     <div class="mb-4">
-                        <label class="inline-block mb-2">Postal Code</label><br>
+                        <label class="inline-block mb-2">Shipping Postal Code</label><br>
                         {{ shipping_form.shipping_zip_code }}
                     </div>
+                    <div class="mb-4">
+                        <label class="inline-block mb-2">Shipping Country</label><br>
+                        {{ shipping_form.shipping_country }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="inline-block mb-2">Shipping Phone Number</label><br>
+                        {{ shipping_form.shipping_phone_number }}
+                    </div>
+    
                 </div>
             </div>
 

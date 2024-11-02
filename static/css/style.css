@@ -1,0 +1,47 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+footer {
+    background-color: #4A5568; /* bg-gray-600 */
+    color: #CBD5E0; /* text-gray-400 */
+    text-align: center;
+    padding: 1rem;
+}
+
+
+
+body {
+    padding-top: 0px; /* Adjust based on the height of your navbar */
+}
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.5;
+}
+
+/* Below 850px: Show only Cart Icon, New Item, Search, and Username Dropdown */
+/* @media (max-width: 850px) {
+    .navbar-container .navbar-links,
+    .navbar-container .navbar-logo {
+        display: none;
+    }
+
+    .navbar-container .navbar-cart,
+    .navbar-container .navbar-username {
+        display: inline-flex;
+    }
+} */
+
+/* Below 600px: Show only Username Dropdown */
+/* @media (max-width: 600px) {
+    .navbar-container .navbar-links,
+    .navbar-container .navbar-cart {
+        display: none;
+    }
+
+    .navbar-container .navbar-username {
+        display: inline-flex;
+    }
+} */

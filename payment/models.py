@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
 
-# Create shipping adress model for user
+# Create shipping address model for user
 class ShippingAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     shipping_full_name = models.CharField(max_length=255)
