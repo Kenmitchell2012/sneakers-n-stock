@@ -10,15 +10,15 @@
             <source src="{% static 'media/item_images/home.mp4' %}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
-        
+    
         <!-- Overlay Image -->
         <img src="{% static 'media/item_images/nikecrazy.gif' %}" alt="Banner" class="absolute top-0 left-0 w-full h-full object-cover opacity-75">
     </div>
 
-    <!-- section showing newest items -->
+
+    <!-- Newest Items Section -->
     <div class="mt-20 px-6 py-12 bg-gray-100 rounded-xl">
         <h2 class="mb-12 text-2xl text-center">Newest items</h2>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {% for item in items %}
                 <div class="bg-white rounded-xl overflow-hidden shadow-lg">
@@ -35,25 +35,8 @@
                     </a>
                 </div>
             {% endfor %}
-            <p>More items coming soon..........</p>
-        </div>
-    </div>
-
-    {% comment %} category section {% endcomment %}
-    <div class="mt-6 px-6 py-12 bg-gray-100 rounded-xl">
-        <h2 class="mb-12 text-2xl text-center">Categories</h2>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {% for category in categories %}
-                <div class="bg-white rounded-xl overflow-hidden shadow-lg">
-                    <a href="#">
-                        <div class="p-6">
-                            <h2 class="text-xl font-bold">{{ category.name }}</h2>
-                            <p class="text-gray-500 mt-2">{{ category.items.count }} Items</p>
-                        </div>
-                    </a>
-                </div>
-            {% endfor %}
+            <p>More items coming soon...</p>
         </div>
     </div>
 {% endblock %}
+

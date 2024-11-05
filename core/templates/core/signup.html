@@ -6,7 +6,7 @@
     <div class="p-6 w-full md:w-1/2 my-6 mx-auto bg-gray-100 rounded-xl">
         <h1 class="mb-6 text-3xl text-center md:text-left">Sign up</h1>
 
-        <form action="" method="post">
+        <form action="" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="mb-4">
                 <label class="inline-block mb-2">Username</label><br>
@@ -23,6 +23,14 @@
             <div class="mb-4">
                 <label class="inline-block mb-2">Repeat Password</label><br>
                 {{ form.password2 }}
+            </div>
+            <div class="mb-4">
+                <label class="inline-block mb-2">Profile Picture</label><br>
+                {{ profile_form.image }}
+            </div>
+            <div class="mb-4">
+                <label class="inline-block mb-2">Profile Summary</label><br>
+                {{ profile_form.summary }}
             </div>
 
             {% if form.errors or form.non_field_errors %}

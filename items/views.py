@@ -27,12 +27,17 @@ def items(request):
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
 
+    # cart qty info
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item_count = cart.items.count()
+
     return render(request, 'item/items.html', {
         'items': items,
         'query': query,
         'categories': categories,
         'category_id': int(category_id),
         'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count,
         })
 
 
