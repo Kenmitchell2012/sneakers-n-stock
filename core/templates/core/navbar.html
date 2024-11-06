@@ -12,7 +12,12 @@
 
         <!-- Main Links: Visible above 500px -->
         <div class="hidden md:flex space-x-6 items-center">
-            <a href="{% url 'item:new' %}" class="text-lg font-semibold hover:text-gray-500">New item</a>
+            <!-- new item link not visible if on new item page -->
+            {% if 'items/new' in request.path %}
+                <a href="{% url 'core:index' %}" class="text-lg font-semibold hover:text-gray-500">Home</a>
+            {% else %}
+                <a href="{% url 'item:new' %}" class="text-lg font-semibold hover:text-gray-500">New item</a>
+            {% endif %}
             <a href="{% url 'item:items' %}" class="text-lg font-semibold hover:text-gray-500">Search</a>
         </div>
 
