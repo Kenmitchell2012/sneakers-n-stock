@@ -68,6 +68,11 @@ def signup(request):
     })
 
 def login_user(request):
+    # if user is already logged in, redirect to index page
+    if request.user.is_authenticated:
+        messages.success(request, "You are already logged in")
+        return redirect('core:index')
+    # log in user
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -160,6 +165,11 @@ def update_user(request):
 def update_password(request):
     if request.user.is_authenticated:
         current_user = request.user
+
+        # Get the cart item count for the authenticated user
+
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_item_count = cart.items.count()
         # was form filled out
         if request.method == 'POST':
             # do stuff
@@ -174,10 +184,10 @@ def update_password(request):
                 return render(request, "core/update_password.html", {'form': form},)
         else:
             form = ChangePasswordForm(current_user)
-            return render(request, "core/update_password.html", {'form': form},)
+            return render(request, "core/update_password.html", {'form': form, 'cart_item_count': cart_item_count},)
     else:
         messages.success(request, 'You must be logged in to change your password!')
-        return redirect('home')
+        return redirect('/login/')
 
 
 

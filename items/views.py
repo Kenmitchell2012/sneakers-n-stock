@@ -95,20 +95,29 @@ def new(request):
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
 
-    return render(request, 'item/form.html', {'item_form': item_form, 'title': 'New Item', 'conversation_count': conversation_count,})
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item_count = cart.items.count()
+
+    return render(request, 'item/form.html', {
+        'item_form': item_form, 
+        'title': 'New Item', 
+        'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count
+        })
 
 @login_required
 def edit(request, pk):
     item = get_object_or_404(Items, pk=pk, created_by=request.user)
     if request.method == 'POST':
-        form = EditItemForm(request.POST, request.FILES, instance=item)
+        item_form = EditItemForm(request.POST, request.FILES, instance=item)
         
-        if form.is_valid():
-            form.save()
+        if item_form.is_valid():
+            item_form.save()
             return redirect('item:detail', pk=item.id)
     else:
-        form = EditItemForm(instance=item)
-    return render(request, 'item/form.html', {'form': form,'title': 'Edit Item'},)
+        item_form = EditItemForm(instance=item)
+    return render(request, 'item/form.html', {'item_form': item_form,'title': 'Edit Item'},)
 
 @login_required
 def delete(request, pk):

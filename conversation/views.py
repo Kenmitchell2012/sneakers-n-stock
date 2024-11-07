@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from items.models import Items
+from cart.models import Cart
 from .models import Conversation
 from .forms import ConversationMessagesForm
 from django.shortcuts import render, get_object_or_404, redirect
@@ -14,6 +15,10 @@ from django.contrib import messages
 @login_required
 def new_conversation(request, item_pk):
     item = get_object_or_404(Items, pk=item_pk)
+
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item_count = cart.items.count()
 
     if item.created_by == request.user:
         messages.info(request, 'You cannot start a conversation with yourself.')
@@ -43,7 +48,7 @@ def new_conversation(request, item_pk):
     else:
         form = ConversationMessagesForm()
     
-    return render(request, 'conversation/new.html', {'form': form})
+    return render(request, 'conversation/new.html', {'form': form, 'cart_item_count': cart_item_count})
 
 
 
@@ -60,6 +65,10 @@ def detail(request, pk):
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
 
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item_count = cart.items.count()
+
     if request.method == 'POST':
         form = ConversationMessagesForm(request.POST)
         if form.is_valid():
@@ -71,7 +80,7 @@ def detail(request, pk):
     else:
         form = ConversationMessagesForm()
 
-    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form, 'conversation_count': conversation_count})
+    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form, 'conversation_count': conversation_count, 'cart_item_count': cart_item_count})
 
 
 
