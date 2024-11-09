@@ -13,42 +13,43 @@
     </h1>
 
     {% if cart.items.all %}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="lg:col-span-2 bg-gray-100 p-6 rounded-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-gray-100 p-6 rounded-xl shadow-lg">
                 <ul>
                     {% for cart_item in cart.items.all %}
-                    <li class="flex flex-col md:flex-row items-center mb-6 bg-white p-4 rounded-xl shadow">
+                    <li class="flex flex-col lg:flex-row items-center mb-6 bg-white p-4 rounded-xl shadow-md">
                         {% if cart_item.item.images.all %}
-                            <img src="{{ cart_item.item.images.all.0.image.url }}" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 md:mb-0">
+                            <img src="{{ cart_item.item.images.all.0.image.url }}" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 lg:mb-0">
                         {% else %}
-                            <img src="path/to/placeholder/image.jpg" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 md:mb-0">
+                            <img src="path/to/placeholder/image.jpg" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 lg:mb-0">
                         {% endif %}
-                        <div class="flex-1 text-center md:text-left">
+                        <div class="flex-1 text-center lg:text-left">
                             <h2 class="text-xl font-semibold">{{ cart_item.item.name }}</h2>
-                            <form action="{% url 'cart:update_quantity' cart_item.id %}" method="post" class="flex flex-col md:flex-row items-center mt-2">
+                            <form action="{% url 'cart:update_quantity' cart_item.id %}" method="post" class="flex flex-col lg:flex-row items-center mt-2">
                                 {% csrf_token %}
-                                <label for="quantity" class="mr-2 mb-2 md:mb-0">Quantity:</label>
+                                <label for="quantity" class="mr-2 mb-2 lg:mb-0">Quantity:</label>
                                 <input type="number" name="quantity" value="{{ cart_item.quantity }}" min="1" class="w-16 text-center border rounded" required>
-                                <button type="submit" class="ml-0 md:ml-2 mt-2 md:mt-0 px-4 py-2 bg-blue-500 text-white rounded">Update</button>
+                                <button type="submit" class="ml-0 lg:ml-2 mt-2 lg:mt-0 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Update</button>
                             </form>
-                            <p class="text-gray-700 mt-2">Price: ${{ cart_item.item.price|floatformat:2 }}</p>
+                            <p class="text-gray-700 mt-2"><strong>Price:</strong> ${{ cart_item.item.price|floatformat:2 }}</p>
                         </div>
-                        <div class="text-center md:text-right mt-4 md:mt-0">
-                            <p class="text-lg font-semibold">Total: ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
+                        <div class="text-center lg:text-right mt-4 lg:mt-0">
+                            <p class="text-lg font-semibold"><strong>Total:</strong> ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
                             <form action="{% url 'cart:remove_from_cart' cart_item.item.id %}" method="post" class="mt-2">
                                 {% csrf_token %}
-                                <button type="submit" class="text-red-500 hover:text-red-700">Remove</button>
+                                <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Remove</button>
                             </form>
                         </div>
                     </li>
                     {% endfor %}
                 </ul>
             </div>
-            <div class="lg:col-span-2 flex justify-end mt-6">
-                <div class="bg-white p-6 rounded-xl shadow-lg w-full lg:w-3/4">
-                    <h2 class="text-2xl font-semibold mb-4">Order Summary</h2>
-                    <p class="text-lg">Total Items: {{ cart.items.count }}</p>
-                    <p class="text-lg font-semibold">Total Price: ${{ cart.calculate_total_price|floatformat:2 }}</p>
+            <div class="lg:col-span-1 flex justify-center lg:justify-end">
+                <div class="bg-white p-6 rounded-xl shadow-lg w-full">
+                    <h2 class="text-2xl font-semibold mb-4 text-center lg:text-left">Order Summary</h2>
+                    <p class="text-lg"><strong>Total Items:</strong> {{ cart.items.count }}</p>
+                    <p class="text-lg font-semibold"><strong>Total Price:</strong> ${{ cart.calculate_total_price|floatformat:2 }}</p>
+                    <a href="{% url 'payment:checkout' %}" class="mt-4 inline-block px-6 py-3 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Checkout</a>
                 </div>
             </div>
         </div>

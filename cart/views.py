@@ -121,7 +121,7 @@ def update_quantity(request, item_id):
 
 @login_required
 def view_cart(request):
-    cart = get_object_or_404(Cart, user=request.user)
+    # cart = get_object_or_404(Cart, user=request.user)
 
     # Get the cart item count for the authenticated user
     cart, created = Cart.objects.get_or_create(user=request.user)
