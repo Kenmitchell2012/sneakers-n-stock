@@ -125,7 +125,8 @@ def view_cart(request):
 
     # Get the cart item count for the authenticated user
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item_count = cart.items.count()
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
     total_price = cart.calculate_total_price()

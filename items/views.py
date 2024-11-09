@@ -29,7 +29,8 @@ def items(request):
 
     # cart qty info
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item_count = cart.items.count()
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
 
     return render(request, 'item/items.html', {
         'items': items,
@@ -97,7 +98,8 @@ def new(request):
 
     # Get the cart item count for the authenticated user
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item_count = cart.items.count()
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
 
     return render(request, 'item/form.html', {
         'item_form': item_form, 
@@ -109,6 +111,14 @@ def new(request):
 @login_required
 def edit(request, pk):
     item = get_object_or_404(Items, pk=pk, created_by=request.user)
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
+    # get conversation count
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
+
     if request.method == 'POST':
         item_form = EditItemForm(request.POST, request.FILES, instance=item)
         
@@ -117,7 +127,12 @@ def edit(request, pk):
             return redirect('item:detail', pk=item.id)
     else:
         item_form = EditItemForm(instance=item)
-    return render(request, 'item/form.html', {'item_form': item_form,'title': 'Edit Item'},)
+    return render(request, 'item/form.html', {
+        'item_form': item_form,
+        'title': 'Edit Item',
+        'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count,
+        },)
 
 @login_required
 def delete(request, pk):

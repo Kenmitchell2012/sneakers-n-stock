@@ -25,7 +25,8 @@ def index(request):
 
         # Get the cart item count for the authenticated user
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_item_count = cart.items.count()
+        cart_items = cart.items.all()
+        cart_item_count = sum(item.quantity for item in cart_items)
     else:
         user = None
         conversation_count = 0
@@ -105,7 +106,8 @@ def user_profile(request, username):
 
     # Cart item count for user
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item_count = cart.items.count()
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
 
     return render(request, 'core/profile.html', {
         'items': items,
@@ -148,7 +150,8 @@ def update_user(request):
 
         # Cart item count for user
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_item_count = cart.items.count()
+        cart_items = cart.items.all()
+        cart_item_count = sum(item.quantity for item in cart_items)
 
         return render(request, "core/update_user.html", {
             'user_form': user_form, 
@@ -169,7 +172,8 @@ def update_password(request):
         # Get the cart item count for the authenticated user
 
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_item_count = cart.items.count()
+        cart_items = cart.items.all()
+        cart_item_count = sum(item.quantity for item in cart_items)
         # was form filled out
         if request.method == 'POST':
             # do stuff

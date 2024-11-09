@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from items.models import Items
+from cart.models import Cart
 
 from django.contrib.auth.models import User
 
@@ -29,9 +30,16 @@ def index(request, username):
     # Determine if the logged-in user is viewing their own dashboard
     is_owner = request.user == user
 
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
+
     return render(request, 'dashboard/index.html', {
         'items': items,
         'user': user,
         'conversation_count': conversation_count,
-        'is_owner': is_owner
+        'is_owner': is_owner,
+        'cart_item_count': cart_item_count,
+        'cart_items': cart_items,
     })
