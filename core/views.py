@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib import messages
@@ -13,6 +14,14 @@ from payment.models import ShippingAddress
 from cart.models import Cart
 from . models import UserProfile
 from items.models import Category, Items
+
+import logging
+from django.db import IntegrityError
+from django.shortcuts import render, redirect
+from .forms import SignupForm
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -47,38 +56,45 @@ def index(request):
 def contact(request):
     return render(request, 'core/contact.html')
 
+
+
 def signup(request):
+     # Redirect authenticated users away from the signup page
+    if request.user.is_authenticated:
+        return redirect('core:index')  # Change this to the appropriate page for logged-in users
+    
+    # If form is submitted, process the form data
     if request.method == 'POST':
         form = SignupForm(request.POST)
-        profile_form = UserProfileForm(request.POST, request.FILES)
 
-        if form.is_valid() and profile_form.is_valid():
-            user = form.save()
-            profile = profile_form.save(commit=False)
-            profile.user = user
-            profile.save()
+        if form.is_valid():
+            try:
+                user = form.save()  # Only save the User; profile is handled by signals
+                return redirect('/login/')
+            except IntegrityError as e:
+                # Log the specific error details
+                logger.error(f"User creation failed for {form.cleaned_data.get('email')}: {e}")
+                form.add_error(None, 'An error occurred during account creation. Please try again later.')
 
-            return redirect('/login/')
     else:
         form = SignupForm()
-        profile_form = UserProfileForm()
 
-    return render(request, 'core/signup.html', {
-        'form': form,
-        'profile_form': profile_form,
-    })
+    return render(request, 'core/signup.html', {'form': form})
+
+
+
 
 def login_user(request):
-    # if user is already logged in, redirect to index page
+    # If user is already logged in, redirect to the home page
     if request.user.is_authenticated:
-        messages.success(request, "You are already logged in")
-        return redirect('core:index')
-    # log in user
+        messages.info(request, "You are already logged in.")
+        return redirect('core:index')  # Redirect to a desired page for logged-in users
+
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
             login(request, user)
             # Ensure user profile exists
@@ -87,6 +103,7 @@ def login_user(request):
         else:
             messages.error(request, 'Invalid username or password.')
             return redirect('/login/')
+
     return render(request, 'core/login.html')
 
 @login_required

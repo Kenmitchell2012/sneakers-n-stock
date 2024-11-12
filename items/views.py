@@ -10,7 +10,7 @@ from .forms import NewItemForm
 from conversation.models import Conversation
 # Create your views here.
 
-
+@login_required
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)
@@ -41,7 +41,6 @@ def items(request):
         'cart_item_count': cart_item_count,
         })
 
-
 @login_required
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
@@ -50,7 +49,10 @@ def detail(request, pk):
     # Get the cart item count for the authenticated user
 
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item_count = cart.items.count()
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
+
+    # get the related items for the item being viewed
     related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:5]
     
     if request.method == 'POST':

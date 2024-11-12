@@ -24,14 +24,14 @@
                 <label class="inline-block mb-2">Repeat Password</label><br>
                 {{ form.password2 }}
             </div>
-            <div class="mb-4">
+            {% comment %} <div class="mb-4">
                 <label class="inline-block mb-2">Profile Picture</label><br>
                 {{ profile_form.image }}
             </div>
             <div class="mb-4">
                 <label class="inline-block mb-2">Profile Summary</label><br>
                 {{ profile_form.summary }}
-            </div>
+            </div> {% endcomment %}
 
             {% if form.errors or form.non_field_errors %}
                 <div class="mb-3 p-4 bg-red-100 rounded-xl">
