@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Checkout{% endblock %}
 
@@ -15,7 +16,11 @@
             <ul>
                 {% for item in cart_items %}
                     <li class="flex flex-row items-center mb-4">
-                        <img src="{{ item.item.images.first.image.url }}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded-lg">
+                        {% if item.item.images.first %}
+                            <img src="{{ item.item.images.first.image.url }}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded-lg">
+                        {% else %}
+                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded-lg">
+                        {% endif %}
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold">{{ item.item.name }}</h3>
                             <p class="text-gray-700">Quantity: {{ item.quantity }}</p>
@@ -23,6 +28,7 @@
                         </div>
                     </li>
                 {% endfor %}
+                
             </ul>
             <div class="mt-6">
                 <p class="text-xl font-semibold">Total Price: ${{ total_price|floatformat:2 }}</p>

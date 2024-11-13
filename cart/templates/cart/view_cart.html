@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load cart_extras %}
+{% load static %}
 
 {% block title %}Cart{% endblock %}
 
@@ -21,7 +22,7 @@
                         {% if cart_item.item.images.all %}
                             <img src="{{ cart_item.item.images.all.0.image.url }}" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 lg:mb-0">
                         {% else %}
-                            <img src="path/to/placeholder/image.jpg" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 lg:mb-0">
+                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-24 h-24 object-cover rounded-xl mr-4 mb-4 lg:mb-0">
                         {% endif %}
                         <div class="flex-1 text-center lg:text-left">
                             <h2 class="text-xl font-semibold">{{ cart_item.item.name }}</h2>

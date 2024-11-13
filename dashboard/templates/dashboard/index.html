@@ -1,5 +1,5 @@
 {% extends 'core/base.html' %}
-
+{% load static %}
 {% block title %}My Items | Puddle{% endblock %}
 
 {% block content %}
@@ -13,10 +13,15 @@
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {% if items %}
+            <!-- Display items here -->
             {% for item in items %}
                 <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
                     <a href="{% url 'item:detail' item.id %}">
-                        <img src="{{ item.images.all.0.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
+                        {% if item.images.all %}
+                            <img src="{{ item.images.all.0.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
+                        {% else %}
+                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ item.name }}" class="w-full h-48 object-cover">
+                        {% endif %}
                         <div class="p-4 text-center">
                             <h2 class="text-xl font-bold text-gray-900">{{ item.name|upper }}</h2>
                             <p class="text-gray-500 mt-2">${{ item.price|floatformat:2 }}</p>
@@ -24,6 +29,7 @@
                     </a>
                 </div>
             {% endfor %}
+        
         {% else %}
             <div class="text-center col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4">
                 <p class="text-xl text-gray-700">You don't have any items yet.</p>

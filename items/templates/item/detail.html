@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}{{ item.name|upper }}{% endblock %}
 
@@ -9,7 +10,11 @@
     <div class="flex flex-col lg:flex-row gap-6 mt-4">
         <!-- Left Column: Images -->
         <div class="lg:w-2/3 flex flex-col items-center">
-            <img id="mainImage" class="w-full h-99 object-cover rounded-lg bg-gray-100 transition-opacity duration-500" src="{{ item.images.first.image.url }}" alt="Main Image">
+            {% if item.images.first %}
+                <img id="mainImage" class="w-full h-99 object-cover rounded-lg bg-gray-100 transition-opacity duration-500" src="{{ item.images.first.image.url }}" alt="Main Image">
+            {% else %}
+                <img id="mainImage" class="w-full h-99 object-cover rounded-lg bg-gray-100 transition-opacity duration-500" src="{% static 'media/item_images/images.png' %}" alt="Default Image">
+            {% endif %}
             <div class="flex flex-wrap justify-center space-x-2 mt-4">
                 {% for image in item.images.all %}
                     <div class="w-24 h-24 bg-gray-100 rounded-lg cursor-pointer mb-2">
@@ -18,6 +23,7 @@
                 {% endfor %}
             </div>
         </div>
+
 
         <!-- Middle Column: Content -->
         <div class="lg:w-1/3">
@@ -62,7 +68,11 @@
             {% for related_item in related_items %}
                 <div class="bg-white rounded-xl overflow-hidden shadow-lg">
                     <a href="{% url 'item:detail' related_item.id %}">
-                        <img src="{{ related_item.image.image.url }}" alt="" class="w-full h-48 object-cover">
+                        {% if related_item.image %}
+                            <img src="{{ related_item.image.image.url }}" alt="{{ related_item.name }}" class="w-full h-48 object-cover">
+                        {% else %}
+                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ related_item.name }}" class="w-full h-48 object-cover">
+                        {% endif %}
                         <div class="p-6">
                             <h2 class="text-xl font-bold">{{ related_item.name|upper }}</h2>
                             <p class="text-gray-500 mt-2">Price: ${{ related_item.price|floatformat:2 }}</p>
