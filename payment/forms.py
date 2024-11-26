@@ -45,3 +45,63 @@ class ShippingAddressForm(forms.ModelForm):
         'placeholder': 'Country',
         'class': 'w-full py-4 px-6 rounded-xl',
         }))
+    
+
+class PaymentForm(forms.Form):
+    card_name = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'Name on Card',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_number = forms.CharField(widget=forms.NumberInput(attrs={
+        'placeholder': 'Card Number',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_exp_date = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'Exp Date',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_cvv = forms.CharField(widget=forms.NumberInput(attrs={
+        'placeholder': 'CVV',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_address1 = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'Address',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_address2 = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'Address (optional)',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_city = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'City',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_state = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'State',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_zip_code = forms.CharField(widget=forms.NumberInput(attrs={
+        'placeholder': 'Zip Code',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_country = forms.CharField(widget=forms.TextInput(attrs={
+        'placeholder': 'Country',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+    card_phone_number = forms.CharField(widget=forms.NumberInput(attrs={
+        'placeholder': 'Phone Number',
+        'class': 'w-full py-4 px-6 rounded-xl',
+        }))
+    
+
+
