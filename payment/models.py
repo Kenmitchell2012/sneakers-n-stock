@@ -12,7 +12,7 @@ class ShippingAddress(models.Model):
     shipping_city = models.CharField(max_length=255)
     shipping_state = models.CharField(max_length=255)
     shipping_zip_code = models.CharField(max_length=10)
-    shipping_phone_number = models.CharField(max_length=20)
+    shipping_phone_number = models.CharField(max_length=20, null=True, blank=True)
     shipping_country = models.CharField(max_length=255)
 
     # dont pluralize address

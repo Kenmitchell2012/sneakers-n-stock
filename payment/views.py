@@ -5,10 +5,11 @@ from .forms import ShippingAddressForm, PaymentForm
 from payment.models import ShippingAddress
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 
-
+@login_required
 def checkout(request):
     # Get the cart item count for the authenticated user
     cart, created = Cart.objects.get_or_create(user=request.user)
