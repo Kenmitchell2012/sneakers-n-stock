@@ -10,38 +10,43 @@
     </h1>
 
     <div class="space-y-6">
-        {% for conversation in conversations %}
-            <div class="relative group">
-                <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 pr-4">
-                            {% if conversation.item.images.exists %}
-                                <img src="{{ conversation.item.images.first.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="{{ conversation.item.name }}">
-                            {% else %}
-                                <img src="{% static 'media/item_images/images.png' %}" class="w-20 h-20 rounded-xl object-cover" alt="Placeholder">
-                            {% endif %}
-                        </div>
-
-                        <div class="flex-grow">
-                            {% for member in conversation.members.all %}
-                                {% if member != request.user %}
-                                    <p class="mb-2 text-lg font-semibold text-gray-700">
-                                        {{ member.username }}
-                                        <span class="text-sm text-gray-500">| {{ conversation.updated_at }}</span>
-                                    </p>
-                                    <p class="text-gray-500">{{ conversation.item.name }}</p>
+        {% if conversations %}
+            {% for conversation in conversations %}
+                <div class="relative group">
+                    <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 pr-4">
+                                {% if conversation.item.images.exists %}
+                                    <img src="{{ conversation.item.images.first.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="{{ conversation.item.name }}">
+                                {% else %}
+                                    <img src="{% static 'media/item_images/images.png' %}" class="w-20 h-20 rounded-xl object-cover" alt="Placeholder">
                                 {% endif %}
-                            {% endfor %}
+                            </div>
+
+                            <div class="flex-grow">
+                                {% for member in conversation.members.all %}
+                                    {% if member != request.user %}
+                                        <p class="mb-2 text-lg font-semibold text-gray-700">
+                                            {{ member.username }}
+                                            <span class="text-sm text-gray-500">| {{ conversation.updated_at }}</span>
+                                        </p>
+                                        <p class="text-gray-500">{{ conversation.item.name }}</p>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                </a>
-                <div class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden group-hover:flex items-center">
-                    <a href="{% url 'conversations:delete' conversation.id %}" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash-alt"></i>
                     </a>
+                    <div class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden group-hover:flex items-center">
+                        <a href="{% url 'conversations:delete' conversation.id %}" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        {% else %}
+            <p class="text-lg text-gray-500">No messages found.</p>
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}

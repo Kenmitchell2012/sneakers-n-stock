@@ -57,7 +57,7 @@ class PaymentForm(forms.Form):
             'placeholder': 'Name on Card',
             'class': INPUT_CLASSES,
         }),
-        error_messages={'required': ''},
+        error_messages={'required': 'false'},
     )
 
     card_number = forms.CharField(
