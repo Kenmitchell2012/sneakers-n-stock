@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect
 from cart.models import Cart
 from conversation.models import Conversation
 from .forms import ShippingAddressForm, PaymentForm
-from payment.models import ShippingAddress
+from payment.models import ShippingAddress, Order, OrderItem
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from items.models import Items
 # Create your views here.
 
 
@@ -94,15 +95,65 @@ def process_order(request):
         # Get shipping info from previous step
         payment_form = PaymentForm(request.POST or None)
         # Get shipping session data
-        my_shipping = request.session.get('my_shipping')
-        print(request.session.get('shipping_address'))  # Should return a dict       
-        messages.success(request, 'Order Placed!')
-        return redirect('core:index')
+        my_shipping = request.session.get('shipping_address')
+
+        #  get order info
+        full_name = my_shipping.get('shipping_full_name')
+        email = my_shipping.get('shipping_email')
+        # Create the shipping address from the session data
+        if my_shipping is not None:
+            shipping_address = f"{my_shipping['shipping_full_name']}\n{my_shipping['shipping_email']}\n{my_shipping['shipping_address']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_zip_code']}\n{my_shipping['shipping_country']}\n{my_shipping['shipping_phone_number']}"
+            print(shipping_address)
+        else:
+            print("Shipping information is missing.")
+        amount_paid = total_price
+
+        # create order
+        if request.user.is_authenticated:
+            # logged in user
+            user = request.user
+            create_order = Order(
+                user=user,
+                full_name=full_name,
+                email=email,
+                shipping_address=shipping_address,
+                amount_paid=amount_paid
+            )
+            create_order.save()
+            # create order items
+            # get order id
+            order_id = create_order.pk
+            # get product id
+            for item in cart_items:
+                item_id = item.item.id
+                item_price = item.item.price
+                item_quantity = item.quantity
+                # create order item
+                order_item = OrderItem(
+                    order=create_order,
+                    item=item.item,
+                    user=user,
+                    quantity=item_quantity,
+                    price=item_price
+                )
+                order_item.save()
 
 
+            messages.success(request, 'Order Placed!')
+            return redirect('core:index')
 
-
-
+        else:
+            # not logged in user
+            # create order without user
+            create_order = Order(
+                full_name=full_name,
+                email=email,
+                shipping_address=shipping_address,
+                amount_paid=amount_paid
+            )
+            create_order.save()
+            messages.error(request, 'Access denied. You must be logged in.')
+            return redirect('core:index')
 
     else:
         messages.success(request, 'Access denied')
