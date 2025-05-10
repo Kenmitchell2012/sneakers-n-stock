@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Unshipped Orders | Admin Dashboard | SneakerzInStock{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">📭 Unshipped Orders</h1>
+
+        {% if orders %}
+            <div class="grid grid-cols-1 gap-6">
+                {% for order in orders %}
+                    <a href="{% url 'payment:order_detail' order.id %}" class="block transition duration-200 ease-in-out transform hover:shadow-lg">
+                        <div class="bg-white p-6 rounded-xl border border-gray-300 shadow-sm hover:border-blue-400">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-lg font-bold text-gray-800">Order #{{ order.id }}</h2>
+                                <span class="text-sm text-yellow-600 font-medium">
+                                    🚚 Not Shipped
+                                </span>
+                            </div>
+
+                            <p class="text-sm text-gray-700 mb-1"><strong>Date Ordered:</strong> {{ order.date_ordered|date:"M d, Y" }}</p>
+                            <p class="text-sm text-gray-700 mb-1"><strong>Name:</strong> {{ order.full_name }}</p>
+                            <p class="text-sm text-gray-700 mb-1"><strong>Email:</strong> {{ order.email }}</p>
+                            <p class="text-sm text-gray-700 mb-2"><strong>Shipping Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
+                            <p class="text-sm text-gray-700 mb-4"><strong>Total Paid:</strong> ${{ order.amount_paid }}</p>
+
+                            <div class="border-t pt-4">
+                                <h3 class="text-sm font-semibold mb-2 text-gray-800">Items:</h3>
+                                <ul class="space-y-1">
+                                    {% for item in order.order_items.all %}
+                                        <li class="text-sm text-gray-600">
+                                            {{ item.quantity }} × {{ item.item.name }} @ ${{ item.price }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">There are no unshipped orders at this time.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

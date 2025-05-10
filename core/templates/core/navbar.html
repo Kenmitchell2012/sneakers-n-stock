@@ -31,6 +31,10 @@
                         <i class="fa-solid fa-chevron-down ml-1"></i>
                     </button>
                     <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 py-2 bg-white rounded-lg shadow-lg z-50">
+                        {% if request.user.is_superuser %}
+                            <a href="{% url 'payment:shipped_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Shipped Dashboard</a>
+                            <a href="{% url 'payment:not_shipped_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Not Shipped Dashboard</a>
+                        {% endif %}
                         <a href="{% url 'core:user_profile' request.user.username %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Profile</a>
                         <a href="{% url 'core:update_user' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Update Profile</a>
                         <a href="{% url 'core:update_password' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Update Password</a>

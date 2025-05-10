@@ -10,6 +10,49 @@ from items.models import Items
 # Create your views here.
 
 
+# Create a view for the order detail page
+def order_detail(request, order_id):
+    if request.user.is_authenticated and request.user.is_superuser:
+        # Get the order by ID
+        order = Order.objects.get(id=order_id)
+        # Get all items in the order
+        order_items = OrderItem.objects.filter(order=order)
+        items = []
+        for order_item in order_items:
+            items.append(order_item.item)
+        return render(request, 'payment/order_detail.html', {'order': order, 'order_items': order_items, 'items': items})
+    else:
+        messages.error(request, 'Access denied. You must be logged in as an admin.')
+        return redirect('core:index')
+
+
+# Create a view for the shipped dashboard
+def shipped_dashboard(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        orders = Order.objects.filter(shipped=True)
+        order_items = OrderItem.objects.all()
+        # Get all items in the order
+        items = []
+        for order in orders:
+            order_items = OrderItem.objects.filter(order=order)
+            for order_item in order_items:
+                items.append(order_item.item)
+        return render(request, 'payment/shipped_dashboard.html', {'orders': orders, 'order_items': order_items, 'items': items})
+    else:
+        messages.error(request, 'Access denied. You must be logged in as an admin.')
+        return redirect('core:index')
+
+# Create a view for the not shipped dashboard
+def not_shipped_dashboard(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        # Get all orders that are not shipped
+        orders = Order.objects.filter(shipped=False)
+        order_items = OrderItem.objects.all()
+        return render(request, 'payment/not_shipped_dashboard.html', {'orders': orders, 'order_items': order_items})
+    else:
+        messages.error(request, 'Access denied. You must be logged in as an admin.')
+        return redirect('core:index')
+
 @login_required
 def checkout(request):
     # Get the cart item count for the authenticated user
@@ -137,6 +180,9 @@ def process_order(request):
                     price=item_price
                 )
                 order_item.save()
+            # clear cart
+            # clear cart items from the database
+            cart.items.all().delete()
 
 
             messages.success(request, 'Order Placed!')
@@ -152,7 +198,27 @@ def process_order(request):
                 amount_paid=amount_paid
             )
             create_order.save()
-            messages.error(request, 'Access denied. You must be logged in.')
+
+            # create order items
+
+            # get order id
+            order_id = create_order.pk
+             # get product id
+            for item in cart_items:
+                item_id = item.item.id
+                item_price = item.item.price
+                item_quantity = item.quantity
+                # create order item
+                order_item = OrderItem(
+                    order=create_order,
+                    item=item.item,
+                    quantity=item_quantity,
+                    price=item_price
+                )
+                order_item.save()
+            # clear cart items from the database
+            cart.items.all().delete()
+            # messages.error(request, 'Access denied. You must be logged in.')
             return redirect('core:index')
 
     else:
