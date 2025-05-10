@@ -4,6 +4,10 @@
 {% block title %}Order #{{ order.id }} Details | Admin Dashboard{% endblock %}
 
 {% block content %}
+<button onclick="history.back()" class="mb-6 px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded hover:bg-gray-300">
+    ← Back
+</button>
+
 <div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
     <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-300">
         <h1 class="text-2xl font-bold text-gray-800 mb-4">🧾 Order #{{ order.id }} Details</h1>
@@ -50,4 +54,10 @@
         </div>
     </div>
 </div>
+<button onclick="history.back()" class="mb-6 px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded hover:bg-gray-300">
+    ← Back
+</button>
+<a href="{% url 'payment:admin_dashboard' %}" class="inline-block mb-6 text-sm text-blue-600 hover:underline">
+    ← Back to Dashboard
+</a>
 {% endblock %}

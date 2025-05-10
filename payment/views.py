@@ -9,6 +9,22 @@ from django.contrib.auth.decorators import login_required
 from items.models import Items
 # Create your views here.
 
+# Create a view for the admin dashboard
+def admin_dashboard(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        # Get all orders
+        orders = Order.objects.all()
+        order_items = OrderItem.objects.all()
+        # Get all items in the order
+        items = []
+        for order in orders:
+            order_items = OrderItem.objects.filter(order=order)
+            for order_item in order_items:
+                items.append(order_item.item)
+        return render(request, 'payment/admin_dashboard.html', {'orders': orders, 'order_items': order_items, 'items': items})
+    else:
+        messages.error(request, 'Access denied. You must be logged in as an admin.')
+        return redirect('core:index')
 
 # Create a view for the order detail page
 def order_detail(request, order_id):

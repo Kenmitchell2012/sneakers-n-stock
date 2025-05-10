@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard | SneakerzInStock{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 py-10 px-4 md:px-8 lg:px-16">
+    <div class="container mx-auto max-w-5xl">
+        <h1 class="text-3xl font-bold mb-8">Admin Overview</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Total Orders -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-300">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📊 Total Orders</h2>
+                <p class="text-3xl font-bold text-blue-600">{{ total_orders }}</p>
+            </div>
+
+            <!-- Shipped Orders -->
+            <a href="{% url 'payment:shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-green-300 hover:shadow-lg transition">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">✅ Shipped Orders</h2>
+                <p class="text-3xl font-bold text-green-600">{{ shipped_orders }}</p>
+                <p class="text-sm text-gray-500 mt-1">View all shipped orders</p>
+            </a>
+
+            <!-- Unshipped Orders -->
+            <a href="{% url 'payment:not_shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-yellow-300 hover:shadow-lg transition">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📦 Unshipped Orders</h2>
+                <p class="text-3xl font-bold text-yellow-600">{{ unshipped_orders }}</p>
+                <p class="text-sm text-gray-500 mt-1">View unshipped queue</p>
+            </a>
+
+            <!-- Revenue -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-300">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">💰 Total Revenue</h2>
+                <p class="text-3xl font-bold text-indigo-600">${{ total_revenue }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
