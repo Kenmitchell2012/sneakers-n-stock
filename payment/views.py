@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from cart.models import Cart
 from conversation.models import Conversation
 from .forms import ShippingAddressForm, PaymentForm
@@ -6,10 +6,12 @@ from payment.models import ShippingAddress, Order, OrderItem
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
 from items.models import Items
 from django.db.models import Sum, DecimalField
 from django.db.models.functions import Coalesce
 # Create your views here.
+
 
 # Create a view for the admin dashboard
 def admin_dashboard(request):
@@ -48,6 +50,23 @@ def order_detail(request, order_id):
         items = []
         for order_item in order_items:
             items.append(order_item.item)
+
+        if request.method == 'POST':
+            # Mark the order as shipped
+            status = request.POST['shipping_status']
+            # check if true or false
+            if status == 'true':
+                # get the order
+                order = Order.objects.filter(id=order_id)
+                # update the status
+                order.update(shipped=True)
+            else:
+                # get the order
+                order = Order.objects.filter(id=order_id)
+                # update the status
+                order.update(shipped=False)
+            messages.success(request, 'Shipping status updated')
+            return redirect('payment:admin_dashboard')
         return render(request, 'payment/order_detail.html', {'order': order, 'order_items': order_items, 'items': items})
     else:
         messages.error(request, 'Access denied. You must be logged in as an admin.')
