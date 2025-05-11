@@ -53,7 +53,7 @@ def det_shipped_date_on_update(sender, instance, **kwargs):
 # order model items
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items", null=True)
     item = models.ForeignKey(Items, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 

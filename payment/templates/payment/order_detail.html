@@ -43,8 +43,9 @@
                                 <p class="text-xs text-gray-600">Quantity: {{ item.quantity }}</p>
                             </div>
                             <div class="text-sm text-gray-800 font-semibold">
-                                ${{ item.price|floatformat:2 }} × {{ item.quantity }} = ${{ item.price|floatformat:2|floatformat|floatformat|stringformat:"s"|add:""|floatformat|add:item.quantity }}
+                                ${{ item.price|floatformat:2 }} × {{ item.quantity }} = ${{ item.total_price|floatformat:2 }}
                             </div>
+                            
                         </li>
                     {% endfor %}
                 </ul>

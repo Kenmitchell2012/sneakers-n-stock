@@ -29,3 +29,7 @@ p {
     display: block !important;
 }
 
+body, html {
+    overflow: visible !important;
+  }
+  

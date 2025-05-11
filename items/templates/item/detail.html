@@ -125,23 +125,36 @@ document.getElementById('addToCartForm').addEventListener('submit', function(eve
 
 function showModal(itemImage, itemPrice, cartTotal) {
     const modalHtml = `
-        <div id="cartModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <img src="${itemImage}" alt="Item Image" class="mb-4">
+        <div id="cartModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                <!-- Close Button -->
+                <button id="closeModal" class="absolute top-0 right-0 m-2 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10">&times;</button>
+
+                <!-- Image -->
+                <img src="${itemImage}" alt="Item Image" class="w-full h-[400px] object-cover rounded-md mb-4 shadow-sm" />
+
+                <!-- Text -->
                 <p class="text-lg font-semibold mb-2">Price: $${itemPrice}</p>
                 <p class="text-lg font-semibold mb-4">Cart Total: $${cartTotal}</p>
+
+                <!-- Buttons -->
                 <div class="flex justify-between">
-                    <button id="continueShopping" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Continue Shopping</button>
-                    <a href="{% url 'cart:view_cart' %}" class="px-4 py-2 bg-green-500 text-white rounded-lg">Proceed to Cart</a>
+                    <button id="continueShopping" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Continue Shopping</button>
+                    <a href="/cart/" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Proceed to Cart</a>
                 </div>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    document.getElementById('continueShopping').addEventListener('click', function() {
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('cartModal').remove();
+    });
+
+    document.getElementById('continueShopping').addEventListener('click', () => {
         document.getElementById('cartModal').remove();
     });
 }
+
 </script>
 {% endblock %}

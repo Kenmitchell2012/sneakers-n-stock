@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from items.models import Items
+from django.db.models import Sum, DecimalField
+from django.db.models.functions import Coalesce
 # Create your views here.
 
 # Create a view for the admin dashboard
@@ -17,12 +19,22 @@ def admin_dashboard(request):
         order_items = OrderItem.objects.all()
         # Get all items in the order
         items = []
+        for item in order_items:
+            item.total_price = item.price * item.quantity
         for order in orders:
             order_items = OrderItem.objects.filter(order=order)
             for order_item in order_items:
                 items.append(order_item.item)
-        return render(request, 'payment/admin_dashboard.html', {'orders': orders, 'order_items': order_items, 'items': items})
+
+        # get total revenue of orders sold
+        total_revenue = Order.objects.aggregate(Sum('amount_paid'))['amount_paid__sum']
+        # get total number of orders
+        total_orders = Order.objects.count()
+        
+
+        return render(request, 'payment/admin_dashboard.html', {'orders': orders, 'order_items': order_items, 'items': items , 'total_revenue': total_revenue, 'total_orders': total_orders})
     else:
+ 
         messages.error(request, 'Access denied. You must be logged in as an admin.')
         return redirect('core:index')
 
@@ -64,6 +76,12 @@ def not_shipped_dashboard(request):
         # Get all orders that are not shipped
         orders = Order.objects.filter(shipped=False)
         order_items = OrderItem.objects.all()
+        # Get all items in the order
+        items = []
+        for order in orders:
+            order_items = OrderItem.objects.filter(order=order)
+            for order_item in order_items:
+                items.append(order_item.item)
         return render(request, 'payment/not_shipped_dashboard.html', {'orders': orders, 'order_items': order_items})
     else:
         messages.error(request, 'Access denied. You must be logged in as an admin.')
