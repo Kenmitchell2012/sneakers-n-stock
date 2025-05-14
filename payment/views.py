@@ -40,34 +40,27 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. You must be logged in as an admin.')
         return redirect('core:index')
 
-# Create a view for the order detail page
 def order_detail(request, order_id):
     if request.user.is_authenticated and request.user.is_superuser:
-        # Get the order by ID
-        order = Order.objects.get(id=order_id)
-        # Get all items in the order
+        order = get_object_or_404(Order, id=order_id)
         order_items = OrderItem.objects.filter(order=order)
-        items = []
-        for order_item in order_items:
-            items.append(order_item.item)
+        items = [item.item for item in order_items]
+        order_items = OrderItem.objects.filter(order=order)
+        items_total = sum(item.price * item.quantity for item in order_items)
 
         if request.method == 'POST':
-            # Mark the order as shipped
             status = request.POST['shipping_status']
-            # check if true or false
-            if status == 'true':
-                # get the order
-                order = Order.objects.filter(id=order_id)
-                # update the status
-                order.update(shipped=True)
-            else:
-                # get the order
-                order = Order.objects.filter(id=order_id)
-                # update the status
-                order.update(shipped=False)
+            order.shipped = True if status == 'true' else False
+            order.save()
             messages.success(request, 'Shipping status updated')
-            return redirect('payment:admin_dashboard')
-        return render(request, 'payment/order_detail.html', {'order': order, 'order_items': order_items, 'items': items})
+            return redirect('payment:order_detail', order_id=order_id)
+
+        return render(request, 'payment/order_detail.html', {
+            'order': order,
+            'order_items': order_items,
+            'items': items,
+            'items_total': items_total,
+        })
     else:
         messages.error(request, 'Access denied. You must be logged in as an admin.')
         return redirect('core:index')
