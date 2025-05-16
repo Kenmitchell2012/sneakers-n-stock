@@ -27,6 +27,15 @@
                             <p class="text-gray-500 mt-2">${{ item.price|floatformat:2 }}</p>
                         </div>
                     </a>
+                    {% if item.quantity > 0 %}
+                        <span class="inline-block mt-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                            Only {{ item.quantity }} left!
+                        </span>
+                    {% else %}
+                        <span class="inline-block mt-2 text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                            Out of stock
+                        </span>
+                    {% endif %}
                 </div>
             {% endfor %}
         

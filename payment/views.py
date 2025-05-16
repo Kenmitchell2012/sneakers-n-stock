@@ -170,10 +170,10 @@ def billing_info(request):
     else:
         messages.error(request, 'Access denied. Invalid request method.')
         return redirect('core:index')
-    
+
 def process_order(request):
     if request.POST:
-        # Get the cart item count for the authenticated user
+        # Get the cart and its items
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_items = cart.items.all()
         cart_item_count = sum(item.quantity for item in cart_items)
@@ -181,94 +181,57 @@ def process_order(request):
         conversation_count = conversations.count()
         total_price = cart.calculate_total_price()
 
-        # Get shipping info from previous step
-        payment_form = PaymentForm(request.POST or None)
-        # Get shipping session data
+        # Shipping info from session
         my_shipping = request.session.get('shipping_address')
+        if my_shipping is None:
+            messages.error(request, 'Shipping information is missing.')
+            return redirect('core:index')
 
-        #  get order info
         full_name = my_shipping.get('shipping_full_name')
         email = my_shipping.get('shipping_email')
-        # Create the shipping address from the session data
-        if my_shipping is not None:
-            shipping_address = f"{my_shipping['shipping_full_name']}\n{my_shipping['shipping_email']}\n{my_shipping['shipping_address']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_zip_code']}\n{my_shipping['shipping_country']}\n{my_shipping['shipping_phone_number']}"
-            print(shipping_address)
-        else:
-            print("Shipping information is missing.")
+        shipping_address = f"{my_shipping['shipping_full_name']}\n{my_shipping['shipping_email']}\n{my_shipping['shipping_address']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_zip_code']}\n{my_shipping['shipping_country']}\n{my_shipping['shipping_phone_number']}"
         amount_paid = total_price
 
-        # create order
-        if request.user.is_authenticated:
-            # logged in user
-            user = request.user
-            create_order = Order(
-                user=user,
-                full_name=full_name,
-                email=email,
-                shipping_address=shipping_address,
-                amount_paid=amount_paid
+        # Create order
+        create_order = Order(
+            user=request.user if request.user.is_authenticated else None,
+            full_name=full_name,
+            email=email,
+            shipping_address=shipping_address,
+            amount_paid=amount_paid
+        )
+        create_order.save()
+
+        # Create order items and update stock
+        for item in cart_items:
+            item_id = item.item.id
+            item_price = item.item.price
+            item_quantity = item.quantity
+
+            order_item = OrderItem(
+                order=create_order,
+                item=item.item,
+                user=request.user if request.user.is_authenticated else None,
+                quantity=item_quantity,
+                price=item_price
             )
-            create_order.save()
-            # create order items
-            # get order id
-            order_id = create_order.pk
-            # get product id
-            for item in cart_items:
-                item_id = item.item.id
-                item_price = item.item.price
-                item_quantity = item.quantity
-                # create order item
-                order_item = OrderItem(
-                    order=create_order,
-                    item=item.item,
-                    user=user,
-                    quantity=item_quantity,
-                    price=item_price
-                )
-                order_item.save()
-            # clear cart
-            # clear cart items from the database
-            cart.items.all().delete()
+            order_item.save()
 
+            # Update stock
+            item_instance = item.item
+            if item_instance.quantity >= item_quantity:
+                item_instance.quantity -= item_quantity
+            else:
+                item_instance.quantity = 0  # Prevent negative stock
+            item_instance.save()
 
-            messages.success(request, 'Order Placed!')
-            return redirect('core:index')
+        # Clear cart
+        cart.items.all().delete()
 
-        else:
-            # not logged in user
-            # create order without user
-            create_order = Order(
-                full_name=full_name,
-                email=email,
-                shipping_address=shipping_address,
-                amount_paid=amount_paid
-            )
-            create_order.save()
-
-            # create order items
-
-            # get order id
-            order_id = create_order.pk
-             # get product id
-            for item in cart_items:
-                item_id = item.item.id
-                item_price = item.item.price
-                item_quantity = item.quantity
-                # create order item
-                order_item = OrderItem(
-                    order=create_order,
-                    item=item.item,
-                    quantity=item_quantity,
-                    price=item_price
-                )
-                order_item.save()
-            # clear cart items from the database
-            cart.items.all().delete()
-            # messages.error(request, 'Access denied. You must be logged in.')
-            return redirect('core:index')
-
+        messages.success(request, 'Order Placed!')
+        return redirect('core:index')
     else:
-        messages.success(request, 'Access denied')
+        messages.error(request, 'Access denied')
         return redirect('core:index')
 
 

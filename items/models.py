@@ -17,6 +17,7 @@ class Items(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=455, blank=True, null=True)
     price = models.FloatField()
+    quantity = models.PositiveIntegerField(default=0)
     is_sold = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, related_name='items', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

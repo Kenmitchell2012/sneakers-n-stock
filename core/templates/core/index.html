@@ -25,22 +25,33 @@
     <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">🔥 New Arrivals</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {% for item in items %}
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition duration-300">
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300 overflow-hidden relative">
                 <a href="{% url 'item:detail' item.id %}" class="block">
                     {% if item.images.all %}
                         <img src="{{ item.images.all.0.image.url }}"
                             alt="{{ item.name }}"
-                            class="h-60 w-full object-cover rounded-t-2xl">
+                            class="h-60 w-full object-cover">
                     {% else %}
                         <img src="{% static 'media/item_images/images.png' %}"
                             alt="Placeholder"
-                            class="h-60 w-full object-cover rounded-t-2xl">
+                            class="h-60 w-full object-cover">
                     {% endif %}
-                    <div class="p-5">
-                        <h3 class="text-md font-semibold text-gray-900 leading-tight line-clamp-2">
+            
+                    {% if item.quantity > 0 %}
+                        <span class="absolute top-3 left-3 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                            Only {{ item.quantity }} left!
+                        </span>
+                    {% else %}
+                        <span class="absolute top-3 left-3 bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                            Out of stock
+                        </span>
+                    {% endif %}
+            
+                    <div class="p-4">
+                        <h3 class="text-md font-semibold text-gray-900 leading-snug line-clamp-2">
                             {{ item.name }}
                         </h3>
-                        <p class="text-gray-600 mt-2">${{ item.price|floatformat:2 }}</p>
+                        <p class="text-sm text-gray-700 mt-2">${{ item.price|floatformat:2 }}</p>
                     </div>
                 </a>
             </div>
