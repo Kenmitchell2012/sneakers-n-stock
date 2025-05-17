@@ -12,6 +12,16 @@ from django.db.models import Sum, DecimalField
 from django.db.models.functions import Coalesce
 # Create your views here.
 
+@login_required
+def user_orders(request):
+    orders = Order.objects.filter(user=request.user).order_by('-date_ordered')
+    return render(request, 'payment/user_orders.html', {'orders': orders})
+
+@login_required
+def user_order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'payment/user_order_detail.html', {'order': order})
+
 
 # Create a view for the admin dashboard
 def admin_dashboard(request):

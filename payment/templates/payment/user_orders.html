@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}My Orders | SneakerzInStock{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">🧾 My Orders</h1>
+
+        {% if orders %}
+            <div class="space-y-4">
+                {% for order in orders %}
+                    <a href="{% url 'payment:user_order_detail' order.id %}" class="block bg-white border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition p-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold text-gray-800">Order #{{ order.id }}</p>
+                                <p class="text-sm text-gray-600">Placed on {{ order.date_ordered|date:"M d, Y" }}</p>
+                            </div>
+                            <div class="text-sm font-medium {{ order.is_shipped|yesno:'text-green-600,text-yellow-600' }}">
+                                {{ order.is_shipped|yesno:"✔️ Shipped,🚚 Not Shipped" }}
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-700 mt-1">Total: ${{ order.amount_paid }}</p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">You haven’t placed any orders yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} | My Orders | SneakerzInStock{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
+    <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-md border border-gray-300">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">🧾 Order #{{ order.id }}</h1>
+
+        <div class="space-y-4 text-gray-700 text-sm">
+            <p><strong>Date Ordered:</strong> {{ order.date_ordered|date:"M d, Y" }}</p>
+
+            {% if order.date_shipped %}
+                <p><strong>Status:</strong> ✅ Shipped on {{ order.date_shipped|date:"M d, Y" }}</p>
+            {% else %}
+                <p><strong>Status:</strong> 🚚 Not Shipped</p>
+            {% endif %}
+
+            <p><strong>Shipping Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
+
+            <p><strong>Total Paid:</strong> ${{ order.amount_paid }}</p>
+        </div>
+
+        <div class="mt-6 border-t pt-4">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Items in this order:</h2>
+            <ul class="space-y-2">
+                {% for item in order.order_items.all %}
+                    <li class="text-sm text-gray-600">
+                        {{ item.quantity }} × {{ item.item.name }} @ ${{ item.price }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="mt-6">
+            <a href="{% url 'payment:user_orders' %}" class="text-blue-600 hover:underline text-sm font-medium">
+                ← Back to My Orders
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

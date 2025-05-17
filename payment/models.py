@@ -39,7 +39,7 @@ class Order(models.Model):
     date_shipped = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-         return f'Order #{self.id} - ${self.amount_paid:.2f}'
+         return f'Order #{self.id} - ${self.amount_paid:.2f} Purchased by {self.user}'
 
 #  Auto add shipping date
 @receiver(pre_save, sender=Order)
