@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load extras %}
 
 {% block title %}{{ item.name|upper }}{% endblock %}
 
@@ -56,18 +57,30 @@
                     <a href="{% url 'item:edit' item.id %}" class="inline-block px-6 py-3 text-lg rounded-xl font-semibold bg-indigo-500 text-white hover:bg-indigo-700">Edit</a>
                 </div>
             {% else %}
-                <form id="addToCartForm" action="{% url 'cart:add_to_cart' item.id %}" method="post" class="mt-6 w-full lg:w-auto">
+                <form method="post" action="{% url 'cart:add_to_cart' item.id %}">
                     {% csrf_token %}
-                    <div class="form-group mb-4">
+                    
+                    <!-- Size Selector -->
+                    <div class="mb-4">
+                        <label for="size" class="block mb-2 text-lg font-medium text-gray-700">Select Size</label>
+                        <select name="size" class="w-full px-3 py-2 border rounded">
+                            {% for size_variant in item.size_variants.all %}
+                                {% if size_variant.quantity > 0 %}
+                                    <option value="{{ size_variant.id }}">Size {{ size_variant.size }} ({{ size_variant.quantity }} in stock)</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <!-- Quantity Input -->
+                    <div class="mb-4">
                         <label for="quantity" class="block mb-2 text-lg font-medium text-gray-700">Quantity</label>
-                        <div class="w-24">
-                            {{ form.quantity }}
-                        </div>
+                        <input type="number" name="quantity" min="1" value="1" class="w-24 px-2 py-1 border rounded">
                     </div>
-                    <div class="flex flex-col gap-4">
-                        <button type="submit" class="inline-block px-6 py-3 text-lg rounded-xl font-semibold bg-teal-500 text-white hover:bg-teal-700 transition duration-200 ease-in-out transform hover:-translate-y-1">Add to Cart</button>
-                        <a href="{% url 'conversations:new' item.id %}" class="inline-block px-6 py-3 text-lg rounded-xl font-semibold bg-indigo-500 text-white hover:bg-indigo-700 text-center transition duration-200 ease-in-out transform hover:-translate-y-1">Contact Seller</a>
-                    </div>
+                
+                    <button type="submit" class="bg-teal-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-teal-700">
+                        Add to Cart
+                    </button>
                 </form>
             {% endif %}
         </div>

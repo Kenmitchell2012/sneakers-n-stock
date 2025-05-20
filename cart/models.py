@@ -1,4 +1,5 @@
 from django.db import models
+from items.models import SizeVariant  
 from django.contrib.auth.models import User
 from items.models import Items  # Assuming your Items model is imported correctly
 
@@ -18,6 +19,7 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     item = models.ForeignKey(Items, on_delete=models.CASCADE)  # Link to your Items model
+    size_variant = models.ForeignKey(SizeVariant, on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
 

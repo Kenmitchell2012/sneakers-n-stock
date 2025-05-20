@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from items.models import Items 
+from items.models import Items, SizeVariant 
 from .models import Cart, CartItem
 from .forms import AddToCartForm
 from django.contrib import messages
@@ -39,18 +39,34 @@ def item_detail(request, item_id):
 def add_to_cart(request, item_id):
     item = get_object_or_404(Items, pk=item_id)
     cart, created = Cart.objects.get_or_create(user=request.user)
-    
+
     if request.method == 'POST':
         form = AddToCartForm(request.POST)
         if form.is_valid():
             quantity = form.cleaned_data['quantity']
-            cart_item, created = CartItem.objects.get_or_create(cart=cart, item=item)
+            size_id = request.POST.get('size')
+
+            # Validate size
+            size_variant = get_object_or_404(SizeVariant, id=size_id, item=item)
+
+            # Check stock
+            if size_variant.quantity < quantity:
+                return JsonResponse({'success': False, 'error': 'Not enough stock for the selected size.'})
+
+            # Check for existing cart item with same size
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart, item=item, size=size_variant
+            )
+
             if not created:
                 cart_item.quantity += quantity
             else:
                 cart_item.quantity = quantity
+
             cart_item.save()
-            
+
+            # Optionally reduce inventory here if you want to reserve stock
+
             cart_total = sum(ci.quantity * ci.item.price for ci in cart.items.all())
             first_image_url = item.images.first().image.url if item.images.exists() else ''
 
@@ -66,7 +82,7 @@ def add_to_cart(request, item_id):
 
     else:
         form = AddToCartForm()
-    
+
     return render(request, 'cart/add_to_cart.html', {'form': form, 'item': item})
 
 

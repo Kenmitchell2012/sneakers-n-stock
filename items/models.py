@@ -28,6 +28,14 @@ class Items(models.Model):
 
     def __str__(self):
         return self.name
+    
+class SizeVariant(models.Model):
+    item = models.ForeignKey(Items, related_name='size_variants', on_delete=models.CASCADE)
+    size = models.CharField(max_length=50)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.item.name} - {self.size}"
 
 class ItemImage(models.Model):
     item = models.ForeignKey(Items, related_name='images', on_delete=models.CASCADE)
