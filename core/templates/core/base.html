@@ -66,27 +66,105 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        function showModal(itemImage, itemPrice, cartTotal) {
+        // Updated showModal function to accept itemSize and itemQuantity
+        function showModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity) {
             document.getElementById('modalItemImage').src = itemImage;
             document.getElementById('modalItemPrice').textContent = itemPrice;
             document.getElementById('modalCartTotal').textContent = cartTotal;
+            document.getElementById('modalItemSize').textContent = itemSize; // Set the size
+            document.getElementById('modalItemQuantity').textContent = itemQuantity; // Set the quantity added
             document.getElementById('cartModal').classList.remove('hidden');
         }
     </script>
 
-    <!-- Modal -->
-    <div id="cartModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/3">
-            <h3 class="text-lg font-bold mb-4">Item Added to Cart</h3>
-            <img id="modalItemImage" class="mb-4 w-full h-full object-cover rounded">
-            <p class="text-gray-700 mb-2">Price: $<span id="modalItemPrice"></span></p>
-            <p class="text-gray-700 mb-4">Current Cart Total: $<span id="modalCartTotal"></span></p>
-            <div class="flex justify-between">
-                <a href="{% url 'cart:view_cart' %}" class="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-700">Proceed to Cart</a>
-                <button class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('cartModal').classList.add('hidden')">Continue Shopping</button>
+    <div id="cartModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <h3 class="text-2xl font-bold text-gray-800">Item Added to Cart!</h3>
+                <button class="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none" onclick="document.getElementById('cartModal').classList.add('hidden'); document.getElementById('modalContent').classList.add('opacity-0', 'scale-95');">
+                    &times;
+                </button>
+            </div>
+            
+            <div class="flex items-center mb-4">
+                <img id="modalItemImage" class="w-24 h-24 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm" src="" alt="Added Item">
+                <div>
+                    <p class="text-gray-800 text-lg font-semibold mb-1">Price: $<span id="modalItemPrice"></span></p>
+                    <p class="text-gray-600 mb-1">Size: <span id="modalItemSize"></span></p>
+                    <p class="text-gray-600">Quantity Added: <span id="modalItemQuantity"></span></p>
+                </div>
+            </div>
+
+            <p class="text-gray-700 text-xl font-bold mb-6 pt-4 border-t border-gray-200">Current Cart Total: $<span id="modalCartTotal"></span></p>
+            
+            <div class="flex flex-col sm:flex-row justify-between gap-3">
+                <a href="{% url 'cart:view_cart' %}" class="flex-1 text-center bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-semibold transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
+                    Proceed to Cart
+                </a>
+                <button class="flex-1 text-center bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 font-semibold transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md" onclick="document.getElementById('cartModal').classList.add('hidden'); document.getElementById('modalContent').classList.add('opacity-0', 'scale-95');">
+                    Continue Shopping
+                </button>
             </div>
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to handle modal closing (for animation)
+            const cartModal = document.getElementById('cartModal');
+            const modalContent = document.getElementById('modalContent');
+
+            cartModal.addEventListener('transitionend', (event) => {
+                if (event.propertyName === 'opacity' && cartModal.classList.contains('hidden')) {
+                    modalContent.classList.add('opacity-0', 'scale-95'); // Reset for next open
+                }
+            });
+
+            // Update showModal to trigger transition
+            const originalShowModal = showModal; // Store original reference
+            showModal = (itemImage, itemPrice, cartTotal, itemSize, itemQuantity) => {
+                originalShowModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity); // Call original
+                // Trigger animation
+                setTimeout(() => {
+                    modalContent.classList.remove('opacity-0', 'scale-95');
+                    modalContent.classList.add('opacity-100', 'scale-100');
+                }, 10); // Small delay to allow 'hidden' class to be removed first
+            };
+
+            // Existing form submission listener (ensure this is in your item detail template or globally accessible)
+            const addToCartForm = document.getElementById('addToCartForm');
+            if (addToCartForm) {
+                addToCartForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const form = event.target;
+                    const formData = new FormData(form);
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showModal(data.itemImage, data.itemPrice, data.cartTotal, data.itemSize, data.itemQuantity);
+                        } else {
+                            // Display the specific error message from the backend
+                            alert(data.error || 'Failed to add item to cart: Unknown error.'); 
+                            console.error('Error adding item to cart:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        // This catch block is for network errors or unhandled JSON parsing issues
+                        alert('A network error occurred or the server response was malformed. Please check console for details.');
+                        console.error('Fetch operation failed:', error);
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>

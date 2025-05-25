@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,12 +84,41 @@ WSGI_APPLICATION = 'puddle.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'OPTIONS': {
+#             'timeout': 30,  # Set timeout to 20 seconds or higher
+#         },
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql', # Changed engine to postgresql
+        'NAME': 'sneakerz_db',                     # Your database name
+        'USER': 'django_user',                     # Your database user
+        'PASSWORD': 'mysecretpgpassword',          # The password for that user
+        'HOST': '127.0.0.1',                       # Docker containers are accessed via localhost IP
+        'PORT': '5432',                            # Default PostgreSQL port
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'sneakerz_db',          # Your database name
+#         'USER': 'django_user',          # Your database user
+#         'PASSWORD': 'supersecret123!', # The password for that user
+#         'HOST': '127.0.0.1',            # <--- CHANGE THIS FROM 'localhost' TO '127.0.0.1'
+#         'PORT': '3306',                 # Default MySQL port
+#         'OPTIONS': {
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#             'charset': 'utf8mb4',
+#         }
+#     }
+# }
 
 
 # Password validation

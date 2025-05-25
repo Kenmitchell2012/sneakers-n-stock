@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/kendrickmitchell/Library/CloudStorage/GoogleDrive-gorillamuzik504@gmail.com/Other computers/My Mac/projects 2/puddle/puddle/env/bin/python3.11" "$0" "$@"
-' '''
+#!/Users/admin/Documents/GitHub/sneakers-n-stock/env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

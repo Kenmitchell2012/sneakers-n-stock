@@ -63,7 +63,7 @@ def detail(request, pk):
             cart_item, created = CartItem.objects.get_or_create(cart=cart, item=item)
             cart_item.quantity += quantity
             cart_item.save()
-            return redirect('cart:view_cart')  # Adjust the redirect to your cart view
+            return redirect('cart:view_cart') 
     else:
         form = AddToCartForm()
     

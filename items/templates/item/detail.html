@@ -11,7 +11,6 @@
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 mt-4">
-        <!-- Left Column: Images -->
         <div class="lg:w-2/3 flex flex-col items-center">
             {% if item.images.first %}
                 <div class="relative w-full h-99">
@@ -39,7 +38,6 @@
             </div>
         </div>
 
-        <!-- Middle Column: Content -->
         <div class="lg:w-1/3">
             <p class="text-2xl text-gray-500"><strong>Price: </strong>${{ item.price|floatformat:2 }}</p>
             <p class="text-gray-500"><strong>Seller: </strong>
@@ -48,7 +46,6 @@
             <p class="text-gray-700 mt-4"><strong>Description: </strong><br>{{ item.description }}</p>
         </div>
 
-        <!-- Right Column: Buttons -->
         <div class="lg:w-1/4 flex flex-col items-start lg:items-end">
             {% if request.user == item.created_by %}
                 <div class="mt-6 p-6 bg-white rounded-xl w-full lg:w-auto">
@@ -57,10 +54,9 @@
                     <a href="{% url 'item:edit' item.id %}" class="inline-block px-6 py-3 text-lg rounded-xl font-semibold bg-indigo-500 text-white hover:bg-indigo-700">Edit</a>
                 </div>
             {% else %}
-                <form method="post" action="{% url 'cart:add_to_cart' item.id %}">
+                <form id="addToCartForm" method="post" action="{% url 'cart:add_to_cart' item.id %}"> {# Changed form method to POST #}
                     {% csrf_token %}
                     
-                    <!-- Size Selector -->
                     <div class="mb-4">
                         <label for="size" class="block mb-2 text-lg font-medium text-gray-700">Select Size</label>
                         <select name="size" class="w-full px-3 py-2 border rounded">
@@ -72,13 +68,12 @@
                         </select>
                     </div>
                 
-                    <!-- Quantity Input -->
                     <div class="mb-4">
                         <label for="quantity" class="block mb-2 text-lg font-medium text-gray-700">Quantity</label>
                         <input type="number" name="quantity" min="1" value="1" class="w-24 px-2 py-1 border rounded">
                     </div>
                 
-                    <button type="submit" class="bg-teal-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-teal-700">
+                    <button type="button" id="addToCartButton" class="bg-teal-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-teal-700">
                         Add to Cart
                     </button>
                 </form>
@@ -125,29 +120,58 @@ function updateMainImage(url) {
     }, 300);
 }
 
-document.getElementById('addToCartForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+// Get references to the form and button
+const addToCartForm = document.getElementById('addToCartForm');
+const addToCartButton = document.getElementById('addToCartButton');
 
-    const form = event.target;
-    const formData = new FormData(form);
+// Add a click listener to the button (not the form submission event)
+addToCartButton.addEventListener('click', function(event) {
+    console.log('Button click event triggered.'); // Debugging: Confirm button click fires
 
-    fetch(form.action, {
+    // If the button is already disabled, do nothing (prevent multiple clicks)
+    if (addToCartButton.disabled) {
+        console.log('Button is already disabled. Ignoring click.');
+        return;
+    }
+
+    // Disable the button and change text to prevent multiple clicks
+    addToCartButton.disabled = true;
+    addToCartButton.textContent = 'Adding...';
+    addToCartButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+    const formData = new FormData(addToCartForm); // Use form reference here
+
+    fetch(addToCartForm.action, { // Use form action reference here
         method: 'POST',
         body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'), // Get CSRF token from formData
         },
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Fetch response received:', response);
+        return response.json();
+    })
     .then(data => {
+        console.log('Fetch data processed:', data);
         if (data.success) {
-            showModal(data.itemImage, data.itemPrice, data.cartTotal);
+            showModal(data.itemImage, data.itemPrice, data.cartTotal, data.itemSize, data.itemQuantity);
         } else {
+            alert(data.error || 'Failed to add item to cart: Unknown error.');
             console.error('Error adding item to cart:', data.error);
         }
     })
-    .catch(error => console.error('Error adding item to cart:', error));
-}
-);
+    .catch(error => {
+        alert('A network error occurred or the server response was malformed. Please check console for details.');
+        console.error('Fetch operation failed:', error);
+    })
+    .finally(() => {
+        // Re-enable the button regardless of success or failure
+        addToCartButton.disabled = false;
+        addToCartButton.textContent = 'Add to Cart';
+        addToCartButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    });
+}); 
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Sum
 
 # Create your models here.
 class Category(models.Model):
@@ -36,6 +37,35 @@ class SizeVariant(models.Model):
 
     def __str__(self):
         return f"{self.item.name} - {self.size}"
+
+    # Override the save method to update the parent Item's quantity
+    def save(self, *args, **kwargs):
+        # Call the original save method to save the SizeVariant instance first
+        super().save(*args, **kwargs)
+        
+        # Recalculate the total quantity for the related Item
+        # item.size_variants.aggregate(Sum('quantity')) returns a dictionary like {'quantity__sum': 10}
+        total_quantity = self.item.size_variants.aggregate(Sum('quantity'))['quantity__sum'] or 0
+        
+        # Update the Item's quantity
+        self.item.quantity = total_quantity
+        self.item.save(update_fields=['quantity']) # Use update_fields for efficiency
+
+    # Optional: Override the delete method to update the parent Item's quantity
+    def delete(self, *args, **kwargs):
+        # Get the item before deletion so we can access it after the delete call
+        related_item = self.item 
+        
+        # Call the original delete method to delete the SizeVariant instance
+        super().delete(*args, **kwargs)
+        
+        # Recalculate the total quantity for the related Item after deletion
+        total_quantity = related_item.size_variants.aggregate(Sum('quantity'))['quantity__sum'] or 0
+        
+        # Update the Item's quantity
+        related_item.quantity = total_quantity
+        related_item.save(update_fields=['quantity']) # Use update_fields for efficiency
+
 
 class ItemImage(models.Model):
     item = models.ForeignKey(Items, related_name='images', on_delete=models.CASCADE)

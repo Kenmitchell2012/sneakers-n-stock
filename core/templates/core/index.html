@@ -4,7 +4,6 @@
 {% block title %}Welcome{% endblock %} | Sneakerz-N-Stock
 
 {% block content %}
-<!-- Hero Section -->
 <div class="relative mb-16">
     <video autoplay muted loop playsinline class="w-full h-[70vh] object-cover">
         <source src="{% static 'media/item_images/home.mp4' %}" type="video/mp4">
@@ -20,7 +19,6 @@
     </div>
 </div>
 
-<!-- Newest Items -->
 <section class="max-w-7xl mx-auto px-6 py-12 bg-gray-100 rounded-xl">
     <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">🔥 New Arrivals</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -55,6 +53,15 @@
                     </div>
                 </a>
             </div>
+        {% empty %}
+            {# --- THIS BLOCK IS ADDED --- #}
+            <div class="col-span-full text-center py-10">
+                <p class="text-xl text-gray-600 mb-4">No new arrivals to display yet.</p>
+                <a href="{% url 'item:new' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-200 ease-in-out transform hover:-translate-y-1 shadow-lg">
+                    Add Your First Item!
+                </a>
+            </div>
+            {# --- END ADDED BLOCK --- #}
         {% endfor %}
     </div>
     <div class="text-center mt-10 text-sm text-gray-500">

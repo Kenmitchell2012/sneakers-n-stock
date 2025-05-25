@@ -17,14 +17,24 @@ class Cart(models.Model):
         return f"Cart for {self.user.username}"
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
-    item = models.ForeignKey(Items, on_delete=models.CASCADE)  # Link to your Items model
+    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
+    item = models.ForeignKey(Items, on_delete=models.CASCADE)
     size_variant = models.ForeignKey(SizeVariant, on_delete=models.CASCADE, null=True, blank=True)
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField(default=1) # Ensure this default is set
+
     added_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # This is the crucial part to prevent duplicates
+        # A cart can only have one of a specific item with a specific size variant
+        unique_together = ('cart', 'item', 'size_variant')
+        ordering = ('added_at',) # Optional: keep items in order of addition
+
     def calculate_item_price(self):
-        return self.item.price * self.quantity
+        return self.quantity * self.item.price
 
     def __str__(self):
-        return f"{self.item.name} in cart for {self.cart.user.username}"
+        # Handle cases where size_variant might be null (e.g., old data or items without size)
+        if self.size_variant:
+            return f"{self.item.name} ({self.size_variant.size}) in {self.cart.user.username}'s cart"
+        return f"{self.item.name} in {self.cart.user.username}'s cart"
