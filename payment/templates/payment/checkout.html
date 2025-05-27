@@ -4,49 +4,91 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl mb-6 font-semibold text-center">
-        Checkout <span class="text-gray-500">({{ cart_item_count }} items)</span>
+<div class="max-w-7xl mx-auto px-6 py-8">
+    <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">
+        Checkout <span class="text-gray-500 text-3xl">({{ cart_item_count }} items)</span>
     </h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Order Summary -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-semibold mb-4">Order Summary</h2>
-            <ul>
-                {% for item in cart_items %}
-                    <li class="flex flex-row items-center mb-4">
-                        {% if item.item.images.first %}
-                            <img src="{{ item.item.images.first.image.url }}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded-lg">
-                        {% else %}
-                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded-lg">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 order-2 lg:order-1">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Shipping Information</h2>
+            <form method="post" action="{% url 'payment:billing_info' %}">
+                {% csrf_token %}
+                
+                {# Loop through form fields to apply Tailwind classes #}
+                {% for field in shipping_form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">
+                            {{ field.label }}
+                        </label>
+                        {{ field }} {# This renders the input/select element #}
+                        {% if field.help_text %}
+                            <p class="text-gray-600 text-xs italic mt-1">{{ field.help_text }}</p>
                         {% endif %}
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold">{{ item.item.name }}</h3>
-                            <p class="text-gray-700">Quantity: {{ item.quantity }}</p>
-                            <p class="text-gray-700">Price: ${{ item.item.price|floatformat:2 }}</p>
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <p class="text-red-500 text-xs italic">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {# Apply Tailwind classes to all input and select elements within the form dynamically #}
+                <style>
+                    #shipping_form input,
+                    #shipping_form select,
+                    #shipping_form textarea { /* Target inputs inside this form */
+                        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); /* shadow */
+                        -webkit-appearance: none; /* appearance-none for webkit */
+                        -moz-appearance: none; /* appearance-none for mozilla */
+                        appearance: none; /* appearance-none */
+                        border: 1px solid #d1d5db; /* border */
+                        border-radius: 0.25rem; /* rounded */
+                        width: 100%; /* w-full */
+                        padding-top: 0.5rem; /* py-2 */
+                        padding-bottom: 0.5rem; /* py-2 */
+                        padding-left: 0.75rem; /* px-3 */
+                        padding-right: 0.75rem; /* px-3 */
+                        color: #4a5568; /* text-gray-700 */
+                        line-height: 1.25; /* leading-tight */
+                        outline: none; /* focus:outline-none */
+                        /* focus:shadow-outline is a dynamic state, might need JS or custom CSS for full effect */
+                    }
+                </style>
+                <button type="submit" class="mt-6 w-full px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">
+                    Go to Billing & Payment
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-gray-100 p-8 rounded-2xl shadow-xl border border-gray-200 lg:col-span-1 order-1 lg:order-2">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Your Order</h2>
+            <ul class="divide-y divide-gray-300">
+                {% for cart_item in cart_items %} {# Changed 'item' to 'cart_item' for consistency #}
+                    <li class="flex items-center py-4">
+                        {% if cart_item.item.images.first %}
+                            <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-20 h-20 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm">
+                        {% else %}
+                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-20 h-20 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm">
+                        {% endif %}
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ cart_item.item.name }}</h3>
+                            {% if cart_item.size_variant %}
+                                <p class="text-gray-600 text-sm">Size: {{ cart_item.size_variant.size }}</p>
+                            {% endif %}
+                            <p class="text-gray-600 text-sm">Quantity: {{ cart_item.quantity }}</p>
                         </div>
+                        <p class="text-gray-800 font-semibold">${{ cart_item.item.price|floatformat:2 }}</p>
                     </li>
                 {% endfor %}
-                
             </ul>
-            <div class="mt-6">
-                <p class="text-xl font-semibold">Total Price: ${{ total_price|floatformat:2 }}</p>
+            <div class="mt-8 pt-6 border-t border-gray-300 flex justify-between items-center">
+                <p class="text-xl font-bold text-gray-900">Total Price:</p>
+                <p class="text-xl font-bold text-gray-900">${{ total_price|floatformat:2 }}</p>
             </div>
             <div class="mt-8 flex justify-between">
                 <a href="{% url 'cart:view_cart' %}" class="px-6 py-3 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Back to Cart</a>
-                {% comment %} <a href="{% url 'payment:checkout' %}" class="px-6 py-3 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Go to Billing</a> {% endcomment %}
             </div>
-        </div>
-
-        <!-- Shipping Information -->
-        <div class="bg-white p-6 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-semibold mb-4">Shipping Information</h2>
-            <form method="post" action="{% url 'payment:billing_info' %}">
-                {% csrf_token %}
-                {{ shipping_form.as_p }}
-                <button type="submit" class="mt-4 w-full px-6 py-3 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Go to Billing</button>
-            </form>
         </div>
     </div>
 </div>

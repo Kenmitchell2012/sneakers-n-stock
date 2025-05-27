@@ -1,0 +1,35 @@
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Django specific stuff:
+*.sqlite3  # Your local SQLite database file
+/db.sqlite3 # Specific path if always at root
+/media/    # User-uploaded files (images, documents, etc.)
+/static_root/ # Collected static files for deployment (if you use collectstatic)
+/staticfiles/ # Another common name for collected static files
+
+# Virtual environment
+/env/      
+.venv/ 
+
+# IDE-specific files:
+.vscode/   # VS Code settings 
+.idea/     # PyCharm settings
+*.iml      # IntelliJ/Android Studio files
+
+# macOS specific ignores
+.DS_Store
+.Trashes
+.Spotlight-V100
+.TemporaryItems
+ehthumbs.db
+Thumbs.db
+
+# npm/yarn specific (if you set up frontend tooling later)
+/node_modules/
+/npm-debug.log
+/.npm/
+
+# Environment variables (if you use .env for local settings)
+.env

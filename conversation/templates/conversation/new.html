@@ -1,28 +1,83 @@
 {% extends 'core/base.html' %}
 
-{% block title %}New conversation| SneakersInStock{% endblock %}
+{% block title %}New conversation | SneakersInStock{% endblock %}
 
 {% block content %}
 
-<h1 class="mb-6 text-3xl">New Conversation</h1>
-<form enctype="multipart/form-data" method="post" action=".">
-    {% csrf_token %}
+<div class="max-w-xl mx-auto px-6 py-8 bg-white rounded-xl shadow-xl border border-gray-200"> {# Main container styled #}
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Start a New Conversation </h1>
 
-    <div class="space-y-4">
-        {{ form.as_p }}
-    </div>
-    {% if form.errors or form.non_field_errors %}
-            <div class="mb-3 p-6 bg-red-100 rounded-xl">
-                {% for field in forms %}
-                    {{ field.errors }}
+    <form method="post" action="." enctype="multipart/form-data" id="newConversationForm"> {# Added ID to form #}
+        {% csrf_token %}
+
+        <div class="space-y-6 mb-6"> {# Increased spacing between fields #}
+            {% for field in form %}
+                <div class="mb-4"> {# Each field wrapper #}
+                    <label for="{{ field.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ field.label }}
+                    </label>
+                    {{ field }} {# Renders the input/textarea #}
+                    {% if field.help_text %}
+                        <p class="text-gray-600 text-xs italic mt-1">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-xs italic mt-1">{{ error }}</p> {# Styled field errors #}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-xl border border-red-200"> {# Styled non-field errors #}
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
                 {% endfor %}
-
-                {{ form.non_field_errors }}
             </div>
         {% endif %}
-        <button class="mt-5 py-6 px-8 text-lg bg-teal-500 text-white hover:bg-teal-700 rounded-xl">Send</button>
+        
+        <button type="submit" class="w-full py-3 px-6 text-lg bg-teal-600 text-white font-bold hover:bg-teal-700 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-1">
+            Send Message
+        </button>
+    </form>
+</div>
 
-    
-</form>
+{# Apply Tailwind classes to form elements dynamically #}
+<style>
+    #newConversationForm input,
+    #newConversationForm textarea { /* Target inputs and textareas inside this form */
+        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); /* shadow */
+        -webkit-appearance: none; /* appearance-none for webkit */
+        -moz-appearance: none; /* appearance-none for mozilla */
+        appearance: none; /* appearance-none */
+        border: 1px solid #d1d5db; /* rounded */
+        border-radius: 0.25rem; /* border */
+        width: 100%; /* w-full */
+        padding-top: 0.5rem; /* py-2 */
+        padding-bottom: 0.5rem; /* py-2 */
+        padding-left: 0.75rem; /* px-3 */
+        padding-right: 0.75rem; /* px-3 */
+        color: #4a5568; /* text-gray-700 */
+        line-height: 1.25; /* leading-tight */
+        outline: none; /* focus:outline-none */
+        /* focus:shadow-outline is a dynamic state handled by focus-ring below */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Added transition for focus */
+    }
+    /* Focus styles matching Tailwind's focus:ring-2 focus:ring-blue-500 and focus:shadow-outline */
+    #newConversationForm input:focus,
+    #newConversationForm textarea:focus {
+        outline: none; /* Remove default browser outline */
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* blue-500 ring equivalent */
+        border-color: #4299e1; /* Optional: change border color on focus */
+    }
+
+    #newConversationForm textarea { /* Specific styling for textarea */
+        min-height: 100px; /* min-h-[100px] */
+        max-height: 300px; /* max-h-[300px] */
+        resize: vertical; /* resize-y */
+    }
+</style>
+
 
 {% endblock %}

@@ -4,41 +4,50 @@
 
 {% block content %}
 
-    <div class="max-w-3xl mx-auto space-y-6">
-        <h1 class="mt-6 mb-6 text-3xl text-center">Conversation about {{ conversation.item.name}}</h1>
+    <div class="max-w-5xl mx-auto px-6 py-8"> {# Increased max-width for better message display #}
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+            Conversation about <span class="text-teal-600">{{ conversation.item.name }}</span>
+        </h1>
 
-        {% for message in conversation.messages.all %}
-            <div id="message_{{ message.id }}" class="flex {% if message.created_by == request.user %}justify-end{% else %}justify-start{% endif %}">
-                <div class="p-6 {% if message.created_by == request.user %}bg-blue-100{% else %}bg-gray-100{% endif %} rounded-xl max-w-lg">
-                    <p class="mb-4"><strong>{{ message.created_by.username }}</strong> @ {{ message.created_at }}</p>
-                    <p>{{ message.content }}</p>
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8"> {# Added container for messages #}
+            <div class="space-y-6 max-h-96 overflow-y-auto pr-2"> {# Max height and overflow for scrollable messages #}
+                {% for message in conversation.messages.all %}
+                    <div id="message_{{ message.id }}" class="flex {% if message.created_by == request.user %}justify-end{% else %}justify-start{% endif %}">
+                        <div class="p-4 rounded-lg max-w-lg shadow-sm text-sm break-words {% if message.created_by == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-100 text-gray-800 mr-auto{% endif %}"> {# Styled message bubbles #}
+                            <p class="mb-1 text-xs opacity-80">
+                                <strong>{{ message.created_by.username }}</strong> @ {{ message.created_at|date:"M d, Y H:i" }} {# Formatted date #}
+                            </p>
+                            <p class="text-base">{{ message.content }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="max-w-5xl mx-auto mt-8">
+            <form method="post" action="{% url 'conversations:detail' conversation.id %}" class="flex items-center space-x-4 p-4 bg-white rounded-xl shadow-lg border border-gray-200"> {# Styled form container #}
+                {% csrf_token %}
+                <textarea name="content" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800" placeholder="Type your message here..." rows="3"></textarea> {# Styled textarea #}
+                
+                <div class="flex flex-col space-y-2"> {# Buttons container #}
+                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">
+                        Send
+                    </button>
+                    <a href="{% url 'conversations:inbox' %}" class="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg shadow-md transition duration-200 ease-in-out transform hover:-translate-y-1 text-center">
+                        Back
+                    </a>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+            </form>
+        </div>
 
-    <div class="max-w-3xl mx-auto mt-8">
-        <form method="post" class="flex items-center space-x-2">
-            {% csrf_token %}
-            <textarea name="content" class="w-full p-2 border border-solid border-gray-300 rounded" placeholder="Type your message here..."></textarea>
-            <div>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Send</button>
-                <a href="{% url 'conversations:inbox' %}" class="inline-block px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded shadow">
-                    Back
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <script>
-    // Scroll to the last message after the page loads
-    window.onload = function() {
-        var messages = document.querySelectorAll('div[id^="message_"]');
-        var lastMessage = messages[messages.length - 1];
-        if (lastMessage) {
-            lastMessage.scrollIntoView();
-        }
-    };
-    </script>
+        <script>
+            // Scroll to the last message after the page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                var messagesContainer = document.querySelector('.max-h-96'); // Select the scrollable message container
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to the bottom
+                }
+            });
+        </script>
 
 {% endblock %}

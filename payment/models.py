@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from items.models import Items
+from items.models import Items, SizeVariant
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -56,6 +56,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items", null=True)
     item = models.ForeignKey(Items, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    size_variant = models.ForeignKey(SizeVariant, on_delete=models.SET_NULL, null=True, blank=True)
 
     quantity = models.PositiveBigIntegerField(default=1)
     price = models.DecimalField(max_digits=8, decimal_places=2)

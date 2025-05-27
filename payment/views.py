@@ -10,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 from items.models import Items
 from django.db.models import Sum, DecimalField
 from django.db.models.functions import Coalesce
+
+from django.db import transaction, IntegrityError
 # Create your views here.
 
 @login_required
@@ -181,67 +183,124 @@ def billing_info(request):
         messages.error(request, 'Access denied. Invalid request method.')
         return redirect('core:index')
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 def process_order(request):
-    if request.POST:
+    if request.method == 'POST': # Use request.method == 'POST' for clarity
         # Get the cart and its items
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart = get_object_or_404(Cart, user=request.user) # Assume cart exists if POSTing from checkout
         cart_items = cart.items.all()
-        cart_item_count = sum(item.quantity for item in cart_items)
-        conversations = Conversation.objects.filter(members__in=[request.user.id])
-        conversation_count = conversations.count()
-        total_price = cart.calculate_total_price()
+        
+        if not cart_items.exists(): # Ensure cart is not empty
+            messages.error(request, 'Your cart is empty.')
+            return redirect('cart:view_cart')
+
+        total_price = sum(ci.quantity * ci.item.price for ci in cart_items)
 
         # Shipping info from session
         my_shipping = request.session.get('shipping_address')
         if my_shipping is None:
-            messages.error(request, 'Shipping information is missing.')
-            return redirect('core:index')
+            messages.error(request, 'Shipping information is missing. Please re-enter your shipping details.')
+            return redirect('core:index') # Redirect to a page where shipping can be re-entered, e.g., checkout
 
-        full_name = my_shipping.get('shipping_full_name')
-        email = my_shipping.get('shipping_email')
-        shipping_address = f"{my_shipping['shipping_full_name']}\n{my_shipping['shipping_email']}\n{my_shipping['shipping_address']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_zip_code']}\n{my_shipping['shipping_country']}\n{my_shipping['shipping_phone_number']}"
-        amount_paid = total_price
+        full_name = my_shipping.get('shipping_full_name', '')
+        email = my_shipping.get('shipping_email', '')
+        # Construct shipping address robustly, handling missing fields
+        shipping_address_parts = [
+            my_shipping.get('shipping_full_name'),
+            my_shipping.get('shipping_email'),
+            my_shipping.get('shipping_address'),
+            my_shipping.get('shipping_city'),
+            my_shipping.get('shipping_state'),
+            my_shipping.get('shipping_zip_code'),
+            my_shipping.get('shipping_country'),
+            my_shipping.get('shipping_phone_number')
+        ]
+        # Filter out None values and join with newline
+        shipping_address = "\n".join(filter(None, shipping_address_parts))
+        
+        amount_paid = total_price # Assuming payment processed and matched total_price
 
-        # Create order
-        create_order = Order(
-            user=request.user if request.user.is_authenticated else None,
-            full_name=full_name,
-            email=email,
-            shipping_address=shipping_address,
-            amount_paid=amount_paid
-        )
-        create_order.save()
+        # Use a transaction for the entire order creation process
+        # This ensures that either the order and all its items are created AND stock is updated,
+        # OR everything is rolled back if any step (like stock check) fails.
+        try:
+            with transaction.atomic():
+                # Create order
+                create_order = Order(
+                    user=request.user if request.user.is_authenticated else None,
+                    full_name=full_name,
+                    email=email,
+                    shipping_address=shipping_address,
+                    amount_paid=amount_paid # Assuming this comes from successful payment
+                )
+                create_order.save()
 
-        # Create order items and update stock
-        for item in cart_items:
-            item_id = item.item.id
-            item_price = item.item.price
-            item_quantity = item.quantity
+                items_out_of_stock = [] # To collect items that couldn't be fulfilled
 
-            order_item = OrderItem(
-                order=create_order,
-                item=item.item,
-                user=request.user if request.user.is_authenticated else None,
-                quantity=item_quantity,
-                price=item_price
-            )
-            order_item.save()
+                # Process each item in the cart to create order items and update stock
+                for cart_item in cart_items:
+                    size_variant = cart_item.size_variant
+                    item_quantity = cart_item.quantity
 
-            # Update stock
-            item_instance = item.item
-            if item_instance.quantity >= item_quantity:
-                item_instance.quantity -= item_quantity
-            else:
-                item_instance.quantity = 0  # Prevent negative stock
-            item_instance.save()
+                    # --- FINAL STOCK VALIDATION AND DECREMENT ---
+                    if size_variant: # Should always be true if cart item is valid
+                        # Check if enough stock is available AT THIS VERY MOMENT
+                        if size_variant.quantity >= item_quantity:
+                            # Decrement stock
+                            size_variant.quantity -= item_quantity
+                            size_variant.save(update_fields=['quantity']) # This will also update Item.quantity
+                            
+                            # Create OrderItem
+                            order_item = OrderItem(
+                                order=create_order,
+                                item=cart_item.item, # Use cart_item.item for the Items instance
+                                size_variant=size_variant, # Link to the specific SizeVariant
+                                user=request.user if request.user.is_authenticated else None,
+                                quantity=item_quantity,
+                                price=cart_item.item.price # Use actual price from Item
+                            )
+                            order_item.save()
+                        else:
+                            # Item is out of stock or not enough quantity for this size variant
+                            items_out_of_stock.append(f"{cart_item.item.name} (Size {size_variant.size}, requested {item_quantity}, available {size_variant.quantity})")
+                            # Optionally: remove this specific item from cart so user can re-order less
+                            cart_item.delete() 
+                    else:
+                        # Should not happen if data is clean, but handles missing size_variant
+                        items_out_of_stock.append(f"{cart_item.item.name} (Error: Size variant missing)")
+                        cart_item.delete() # Remove problematic item from cart
 
-        # Clear cart
-        cart.items.all().delete()
+                if items_out_of_stock:
+                    # If any items were out of stock, roll back the entire order or notify user
+                    # Option A: Rollback entire order and notify user (Recommended for simplicity)
+                    transaction.set_rollback(True) # Force rollback of the transaction
+                    messages.error(request, f"Order could not be placed fully. Some items were out of stock: {'; '.join(items_out_out_stock)}. Please review your cart.")
+                    logger.warning(f"Order failed for user {request.user.username} due to out of stock items: {items_out_out_stock}")
+                    return redirect('cart:view_cart') # Redirect to cart to show updated state
 
-        messages.success(request, 'Order Placed!')
-        return redirect('core:index')
+                    # Option B: (More complex) Create partial order and notify.
+                    # This would involve more sophisticated logic and partial order status.
+                    # For now, rolling back is safer.
+                
+                # If all items were in stock and order created successfully, clear the cart
+                cart.items.all().delete()
+                
+                messages.success(request, 'Order Placed Successfully!')
+                return redirect('core:index') # Redirect to a thank you page or order confirmation page
+        
+        except IntegrityError as e:
+            logger.error(f"IntegrityError during order processing for user {request.user.username}: {e}")
+            messages.error(request, 'A database error occurred during order processing. Please try again.')
+            return redirect('cart:view_cart')
+        except Exception as e:
+            logger.error(f"Unexpected error during order processing for user {request.user.username}: {e}")
+            messages.error(request, 'An unexpected error occurred while placing your order. Please try again.')
+            return redirect('cart:view_cart')
     else:
-        messages.error(request, 'Access denied')
+        messages.error(request, 'Invalid request method. Access denied.')
         return redirect('core:index')
 
 

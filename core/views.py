@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 from django.contrib.auth.models import User
 from conversation.models import Conversation
-from .forms import SignupForm, EditProfileForm, UserProfileForm, ChangePasswordForm  # Imported UserProfileForm
+from .forms import SignupForm, EditProfileForm, UserProfileForm, ChangePasswordForm, LoginForm  # Imported UserProfileForm
 from payment.forms import ShippingAddressForm
 from payment.models import ShippingAddress
 from cart.models import Cart
@@ -85,26 +85,37 @@ def signup(request):
 
 
 def login_user(request):
-    # If user is already logged in, redirect to the home page
+    # If user is already logged in, immediately redirect to the home page
     if request.user.is_authenticated:
         messages.info(request, "You are already logged in.")
-        return redirect('core:index')  # Redirect to a desired page for logged-in users
+        return redirect('core:index')
 
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
+        # Instantiate LoginForm with request and POST data for validation
+        form = LoginForm(request, data=request.POST) 
+        
+        if form.is_valid():
+            # If form is valid, the user is authenticated via AuthenticationForm's clean method
+            user = form.get_user() 
             login(request, user)
-            # Ensure user profile exists
+            
+            # Ensure user profile exists (if you have a custom UserProfile model)
             UserProfile.objects.get_or_create(user=user)
+            
+            messages.success(request, f"Welcome back, {user.username}!")
             return redirect('core:index')
         else:
-            messages.error(request, 'Invalid username or password.')
-            return redirect('/login/')
-
-    return render(request, 'core/login.html')
+            # If form is not valid, messages.error will be set by the form's errors
+            # You can customize error messages if needed, but form.errors are usually good.
+            messages.error(request, 'Invalid username or password. Please try again.')
+            # No redirect here, we re-render the page with the form containing errors
+            return render(request, 'core/login.html', {'form': form})
+    else:
+        # For GET requests, create an empty instance of the LoginForm
+        form = LoginForm()
+    
+    # Render the login page with the form (either empty for GET, or with errors for invalid POST)
+    return render(request, 'core/login.html', {'form': form})
 
 @login_required
 def user_profile(request, username):

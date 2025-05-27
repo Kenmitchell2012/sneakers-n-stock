@@ -10,7 +10,9 @@ from .forms import NewItemForm
 from conversation.models import Conversation
 # Create your views here.
 
-@login_required
+import logging
+logger = logging.getLogger(__name__)
+
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)
@@ -21,58 +23,73 @@ def items(request):
         items = items.filter(category__id=category_id)
 
     if query:
-        items = items.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(price__icontains=query))
+        # Use Q objects to build complex OR queries
+        items = items.filter(
+            Q(name__icontains=query) | 
+            Q(description__icontains=query) | 
+            Q(price__icontains=query) # Note: price__icontains might behave unexpectedly for non-numeric queries
+        )
 
-    # Handle conversations
-    conversations = Conversation.objects.filter(members__in=[request.user.id])
-    conversation_count = conversations.count()
+    # --- NEW LOGIC: Initialize user-specific data to default values for guests ---
+    conversation_count = 0
+    cart_item_count = 0
 
-    # cart qty info
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_items = cart.items.all()
-    cart_item_count = sum(item.quantity for item in cart_items)
+    # Only fetch user-specific data if the user is authenticated
+    if request.user.is_authenticated:
+        # Handle conversations
+        conversations = Conversation.objects.filter(members__in=[request.user.id])
+        conversation_count = conversations.count()
+
+        # Cart quantity info
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_items = cart.items.all()
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart_items) # Use item_in_cart for clarity
+    # --- END NEW LOGIC ---
 
     return render(request, 'item/items.html', {
         'items': items,
         'query': query,
         'categories': categories,
         'category_id': int(category_id),
-        'conversation_count': conversation_count,
-        'cart_item_count': cart_item_count,
+        'conversation_count': conversation_count, # Will be 0 for guests, actual count for logged-in
+        'cart_item_count': cart_item_count,       # Will be 0 for guests, actual count for logged-in
         })
 
-@login_required
+
+
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
-    conversations = Conversation.objects.filter(members__in=[request.user.id])
-    conversation_count = conversations.count()
-    # Get the cart item count for the authenticated user
+    
+    # Initialize variables for authenticated-only data
+    conversation_count = 0
+    cart_item_count = 0
+    form = AddToCartForm() # Initialize form for GET request (and unauthenticated users)
 
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_items = cart.items.all()
-    cart_item_count = sum(item.quantity for item in cart_items)
+    # Only fetch user-specific data if the user is authenticated
+    if request.user.is_authenticated:
+        conversations = Conversation.objects.filter(members__in=[request.user.id])
+        conversation_count = conversations.count()
 
+        # Get the cart and its item count for the authenticated user
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_items = cart.items.all()
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart_items) # Use a different loop var name here (item_in_cart)
+
+        # If a POST request comes in for Add to Cart, it will be handled by the @login_required add_to_cart view
+        # The form is rendered here, but its action goes to cart:add_to_cart
+        # So, we can just initialize the form here.
+        
     # get the related items for the item being viewed
-    related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:5]
+    related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[:5] # Limit to 5 related items
     
-    if request.method == 'POST':
-        form = AddToCartForm(request.POST)
-        if form.is_valid():
-            cart, created = Cart.objects.get_or_create(user=request.user)
-            quantity = form.cleaned_data['quantity']
-            cart_item, created = CartItem.objects.get_or_create(cart=cart, item=item)
-            cart_item.quantity += quantity
-            cart_item.save()
-            return redirect('cart:view_cart') 
-    else:
-        form = AddToCartForm()
-    
+    # If the user is not authenticated, the form will still be rendered, but it won't be used for adding to cart
     context = {
         'item': item,
         'related_items': related_items,
         'conversation_count': conversation_count,
-        'form': form,
+        'form': form, # This form will be for AddToCart, regardless of login status
         'cart_item_count': cart_item_count,
+        # 'is_authenticated': request.user.is_authenticated, # Can pass this to template for explicit checks
     }
     return render(request, 'item/detail.html', context)
 

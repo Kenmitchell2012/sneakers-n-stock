@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>{% block title %}{% endblock %} | SneakerzInStock</title>
 </head>
-<body>
+<body class="flex flex-col min-h-screen"> {# <-- Body needs flex container classes #}
 
     {% include 'core/navbar.html' %}
     
@@ -34,35 +34,57 @@
         </div>
     {% endif %}
 
-
-
-    <div class="px-6 py-6">
-        {% block content %}
-        
-        {% endblock %}
+    {# <-- This div now makes the content grow and push the footer down #}
+    <div class="flex-grow"> 
+        <div class="px-6 py-6">
+            {% block content %}
+            
+            {% endblock %}
+        </div>
     </div>
 
-    <footer class="py-6 px-6 flex justify-between bg-gray-500">
-        <div class="w-2/3 pr-10">
-            <h3 class="mb-5 font-semibold text-gray-400">About</h3>
-            <p class="text-gray-300">
-                SneakerzInStock is your one-stop shop for the latest and greatest in sneaker fashion. We provide a comprehensive selection of shoes for all tastes and styles. Our mission is to keep you updated with the hottest trends and ensure your feet stay stylish and comfortable.
-            </p>
+    <footer class="bg-gray-800 text-gray-300 py-12 px-6 lg:px-12 mt-auto"> 
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-1">
+                <h3 class="text-xl font-bold text-white mb-4">About SneakerzInStock</h3>
+                <p class="text-sm leading-relaxed">
+                    SneakerzInStock is your one-stop shop for the latest and greatest in sneaker fashion. We provide a comprehensive selection of shoes for all tastes and styles. Our mission is to keep you updated with the hottest trends and ensure your feet stay stylish and comfortable.
+                </p>
+            </div>
+            
+            <div class="md:col-span-1">
+                <h3 class="text-xl font-bold text-white mb-4">Quick Links</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" class="hover:text-teal-400 transition-colors duration-200">About Us</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="hover:text-teal-400 transition-colors duration-200">Contact Us</a></li>
+                    <li><a href="#" class="hover:text-teal-400 transition-colors duration-200">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:text-teal-400 transition-colors duration-200">Terms of Use</a></li>
+                </ul>
+            </div>
+
+            <div class="md:col-span-1">
+                <h3 class="text-xl font-bold text-white mb-4">Connect</h3>
+                <p class="text-sm">Follow us on social media for updates!</p>
+                <div class="flex space-x-4 mt-3">
+                    <a href="#" class="text-gray-300 hover:text-teal-400 transition-colors duration-200">
+                        <i class="fab fa-facebook-square text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-300 hover:text-teal-400 transition-colors duration-200">
+                        <i class="fab fa-instagram-square text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-300 hover:text-teal-400 transition-colors duration-200">
+                        <i class="fab fa-twitter-square text-2xl"></i>
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="w-1/3">
-            <h3 class="mb-5 font-semibold text-gray-400">Links</h3>
-            <ul class="space-y-2">
-                <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">About</a></li>
-                <li><a href="{% url 'core:contact' %}" class="text-lg text-teal-500 hover:text-teal-700">Contact Us</a></li>
-                <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">Privacy</a></li>
-                <li><a href="#" class="text-lg text-teal-500 hover:text-teal-700">Terms of Use</a></li>
-            </ul>
+
+        <div class="mt-12 pt-8 border-t border-gray-700 text-center text-sm text-gray-500">
+            <p>&copy; <span id="currentYear"></span> SneakerzInStock. All rights reserved. Powered by KMitchell Programming.</p>
         </div>
     </footer>
-    <div class="py-4 bg-gray-600 text-center text-gray-400">
-        <p>&copy; <span id="currentYear"></span> KMitchell Programming. All rights reserved.</p>
-    </div>
-    
+
+    {# <-- All scripts #}
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
@@ -75,8 +97,32 @@
             document.getElementById('modalItemQuantity').textContent = itemQuantity; // Set the quantity added
             document.getElementById('cartModal').classList.remove('hidden');
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cartModal = document.getElementById('cartModal');
+            const modalContent = document.getElementById('modalContent');
+
+            cartModal.addEventListener('transitionend', (event) => {
+                if (event.propertyName === 'opacity' && cartModal.classList.contains('hidden')) {
+                    modalContent.classList.add('opacity-0', 'scale-95'); // Reset for next open
+                }
+            });
+
+            const originalShowModal = showModal; 
+            showModal = (itemImage, itemPrice, cartTotal, itemSize, itemQuantity) => {
+                originalShowModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity); 
+                setTimeout(() => {
+                    modalContent.classList.remove('opacity-0', 'scale-95');
+                    modalContent.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            };
+
+            // This listener is now on the specific button in item/detail.html, not here in base.html
+            // If you had a form submission listener here previously, it's now handled by item/detail.html itself.
+        });
     </script>
 
+    {# <-- Your Modal HTML should be here, right before the closing </body> tag #}
     <div id="cartModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
             <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
@@ -108,63 +154,5 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Function to handle modal closing (for animation)
-            const cartModal = document.getElementById('cartModal');
-            const modalContent = document.getElementById('modalContent');
-
-            cartModal.addEventListener('transitionend', (event) => {
-                if (event.propertyName === 'opacity' && cartModal.classList.contains('hidden')) {
-                    modalContent.classList.add('opacity-0', 'scale-95'); // Reset for next open
-                }
-            });
-
-            // Update showModal to trigger transition
-            const originalShowModal = showModal; // Store original reference
-            showModal = (itemImage, itemPrice, cartTotal, itemSize, itemQuantity) => {
-                originalShowModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity); // Call original
-                // Trigger animation
-                setTimeout(() => {
-                    modalContent.classList.remove('opacity-0', 'scale-95');
-                    modalContent.classList.add('opacity-100', 'scale-100');
-                }, 10); // Small delay to allow 'hidden' class to be removed first
-            };
-
-            // Existing form submission listener (ensure this is in your item detail template or globally accessible)
-            const addToCartForm = document.getElementById('addToCartForm');
-            if (addToCartForm) {
-                addToCartForm.addEventListener('submit', function(event) {
-                    event.preventDefault();
-
-                    const form = event.target;
-                    const formData = new FormData(form);
-
-                    fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showModal(data.itemImage, data.itemPrice, data.cartTotal, data.itemSize, data.itemQuantity);
-                        } else {
-                            // Display the specific error message from the backend
-                            alert(data.error || 'Failed to add item to cart: Unknown error.'); 
-                            console.error('Error adding item to cart:', data.error);
-                        }
-                    })
-                    .catch(error => {
-                        // This catch block is for network errors or unhandled JSON parsing issues
-                        alert('A network error occurred or the server response was malformed. Please check console for details.');
-                        console.error('Fetch operation failed:', error);
-                    });
-                });
-            }
-        });
-    </script>
 </body>
 </html>

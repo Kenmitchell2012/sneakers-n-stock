@@ -28,11 +28,11 @@
                     {% if item.images.all %}
                         <img src="{{ item.images.all.0.image.url }}"
                             alt="{{ item.name }}"
-                            class="h-60 w-full object-cover">
+                            class="h-60 w-full object-contain bg-gray-100 p-2"> {# <-- CHANGED HERE: object-contain & added padding/background #}
                     {% else %}
                         <img src="{% static 'media/item_images/images.png' %}"
                             alt="Placeholder"
-                            class="h-60 w-full object-cover">
+                            class="h-60 w-full object-contain bg-gray-100 p-2"> {# <-- CHANGED HERE: object-contain & added padding/background #}
                     {% endif %}
             
                     {% if item.quantity > 0 %}
@@ -54,14 +54,12 @@
                 </a>
             </div>
         {% empty %}
-            {# --- THIS BLOCK IS ADDED --- #}
             <div class="col-span-full text-center py-10">
                 <p class="text-xl text-gray-600 mb-4">No new arrivals to display yet.</p>
                 <a href="{% url 'item:new' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-200 ease-in-out transform hover:-translate-y-1 shadow-lg">
                     Add Your First Item!
                 </a>
             </div>
-            {# --- END ADDED BLOCK --- #}
         {% endfor %}
     </div>
     <div class="text-center mt-10 text-sm text-gray-500">
