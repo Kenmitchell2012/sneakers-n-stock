@@ -98,8 +98,10 @@
                             Contact Seller
                         </a>
                     {% else %}
+                        {# --- CHANGE THIS LINE --- #}
                         <p class="mb-4 text-lg">
-                            <a href="{% url 'core:login' %}" class="text-blue-600 hover:underline">Login</a> to contact the seller.
+                            {# This link now points to login, passing the item detail page as 'next' #}
+                            <a href="{% url 'core:login' %}?next={% url 'item:detail' item.id %}" class="text-blue-600 hover:underline">Login</a> to contact the seller.
                         </p>
                     {% endif %}
                 </div>

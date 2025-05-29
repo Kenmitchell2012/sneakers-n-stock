@@ -16,11 +16,15 @@
                     <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 pr-4">
-                                {% if conversation.item.images.exists %}
-                                    <img src="{{ conversation.item.images.first.image.url }}" class="w-20 h-20 rounded-xl object-cover" alt="{{ conversation.item.name }}">
-                                {% else %}
-                                    <img src="{% static 'media/item_images/images.png' %}" class="w-20 h-20 rounded-xl object-cover" alt="Placeholder">
-                                {% endif %}
+                                {# --- IMAGE CONTAINER --- #}
+                                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center p-1 border border-gray-200 shadow-sm"> {# Added flex/justify/items/p-1/border/shadow #}
+                                    {% if conversation.item.images.exists %}
+                                        <img src="{{ conversation.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ conversation.item.name }}"> {# Changed object-cover to object-contain #}
+                                    {% else %}
+                                        <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder"> {# Changed object-cover to object-contain #}
+                                    {% endif %}
+                                </div>
+                                {# --- END IMAGE CONTAINER --- #}
                             </div>
 
                             <div class="flex-grow">
@@ -28,7 +32,7 @@
                                     {% if member != request.user %}
                                         <p class="mb-2 text-lg font-semibold text-gray-700">
                                             {{ member.username }}
-                                            <span class="text-sm text-gray-500">| {{ conversation.updated_at }}</span>
+                                            <span class="text-sm text-gray-500">| {{ conversation.updated_at|date:"M d, Y H:i" }}</span> {# Added date formatting #}
                                         </p>
                                         <p class="text-gray-500">{{ conversation.item.name }}</p>
                                     {% endif %}

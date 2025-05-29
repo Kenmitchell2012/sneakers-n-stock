@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, resolve_url
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -88,34 +88,57 @@ def login_user(request):
     # If user is already logged in, immediately redirect to the home page
     if request.user.is_authenticated:
         messages.info(request, "You are already logged in.")
-        return redirect('core:index')
+        return redirect('core:index') 
 
     if request.method == 'POST':
-        # Instantiate LoginForm with request and POST data for validation
         form = LoginForm(request, data=request.POST) 
         
         if form.is_valid():
-            # If form is valid, the user is authenticated via AuthenticationForm's clean method
             user = form.get_user() 
             login(request, user)
             
-            # Ensure user profile exists (if you have a custom UserProfile model)
             UserProfile.objects.get_or_create(user=user)
             
             messages.success(request, f"Welcome back, {user.username}!")
-            return redirect('core:index')
+            
+            # --- REVISED REDIRECT LOGIC ---
+            # Prioritize 'next' from GET (most common for redirects from decorators)
+            # Fallback to 'next' from POST (if hidden in form)
+            # Default to LOGIN_REDIRECT_URL from settings.py
+            next_url = request.GET.get('next') # Check GET parameters first
+            
+            if not next_url: # If not found in GET, check POST (less common for redirects)
+                next_url = request.POST.get('next')
+            
+            if not next_url: # If still not found, use the default login redirect URL
+                next_url = resolve_url('core:index') # Use resolve_url for robustness
+
+            # --- DEBUGGING PRINTS FOR THIS FINAL ATTEMPT ---
+            print(f"\n--- Login Redirect Debug ---")
+            print(f"Request.GET.get('next'): {request.GET.get('next')}")
+            print(f"Request.POST.get('next'): {request.POST.get('next')}")
+            print(f"Final next_url being used: {next_url}")
+            print(f"User authenticated: {request.user.is_authenticated}")
+            print(f"--- End Login Redirect Debug ---")
+            # --- END DEBUGGING PRINTS ---
+            
+            return redirect(next_url)
+
         else:
-            # If form is not valid, messages.error will be set by the form's errors
-            # You can customize error messages if needed, but form.errors are usually good.
             messages.error(request, 'Invalid username or password. Please try again.')
-            # No redirect here, we re-render the page with the form containing errors
             return render(request, 'core/login.html', {'form': form})
     else:
-        # For GET requests, create an empty instance of the LoginForm
+        # For GET requests, ensure 'next' parameter is passed to the context for debugging if needed
         form = LoginForm()
-    
-    # Render the login page with the form (either empty for GET, or with errors for invalid POST)
-    return render(request, 'core/login.html', {'form': form})
+        context = {
+            'form': form,
+        }
+        # --- DEBUGGING PRINTS FOR GET REQUEST ---
+        print(f"\n--- Login Page GET Debug ---")
+        print(f"GET Request next parameter: {request.GET.get('next')}")
+        print(f"--- End Login Page GET Debug ---")
+        # --- END DEBUGGING PRINTS ---
+        return render(request, 'core/login.html', context)
 
 @login_required
 def user_profile(request, username):
