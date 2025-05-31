@@ -12,7 +12,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 order-2 lg:order-1">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Shipping Information</h2>
-            <form method="post" action="{% url 'payment:billing_info' %}">
+            <form method="post" action="{% url 'payment:checkout' %}" id="shipping_form">
                 {% csrf_token %}
                 
                 {# Loop through form fields to apply Tailwind classes #}
@@ -25,34 +25,25 @@
                         {% if field.help_text %}
                             <p class="text-gray-600 text-xs italic mt-1">{{ field.help_text }}</p>
                         {% endif %}
-                        {% if field.errors %}
+                        {% if field.errors %} {# <-- Display field-specific errors #}
                             {% for error in field.errors %}
-                                <p class="text-red-500 text-xs italic">{{ error }}</p>
+                                <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
                             {% endfor %}
                         {% endif %}
                     </div>
                 {% endfor %}
 
-                {# Apply Tailwind classes to all input and select elements within the form dynamically #}
+                {% if shipping_form.non_field_errors %} {# <-- Display general form errors #}
+                    <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-xl border border-red-200">
+                        {% for error in shipping_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 <style>
-                    #shipping_form input,
-                    #shipping_form select,
-                    #shipping_form textarea { /* Target inputs inside this form */
-                        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); /* shadow */
-                        -webkit-appearance: none; /* appearance-none for webkit */
-                        -moz-appearance: none; /* appearance-none for mozilla */
-                        appearance: none; /* appearance-none */
-                        border: 1px solid #d1d5db; /* border */
-                        border-radius: 0.25rem; /* rounded */
-                        width: 100%; /* w-full */
-                        padding-top: 0.5rem; /* py-2 */
-                        padding-bottom: 0.5rem; /* py-2 */
-                        padding-left: 0.75rem; /* px-3 */
-                        padding-right: 0.75rem; /* px-3 */
-                        color: #4a5568; /* text-gray-700 */
-                        line-height: 1.25; /* leading-tight */
-                        outline: none; /* focus:outline-none */
-                        /* focus:shadow-outline is a dynamic state, might need JS or custom CSS for full effect */
+                    #shipping_form input, #shipping_form select, #shipping_form textarea { 
+                        @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
                     }
                 </style>
                 <button type="submit" class="mt-6 w-full px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">

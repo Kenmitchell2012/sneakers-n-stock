@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Order Placed!{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-12 text-center bg-white rounded-xl shadow-lg mt-10 max-w-md">
+    <h1 class="text-4xl font-extrabold text-green-600 mb-4">Payment Successful!</h1>
+    <p class="text-lg text-gray-700 mb-6">Your order has been placed and will be processed shortly.</p>
+    <p class="text-gray-600">You can view your order details in your dashboard.</p>
+    <div class="mt-8 flex justify-center space-x-4">
+        <a href="{% url 'payment:user_orders' %}" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">View My Orders</a>
+        <a href="{% url 'core:index' %}" class="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400">Continue Shopping</a>
+    </div>
+</div>
+{% endblock %}

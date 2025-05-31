@@ -32,7 +32,7 @@
                 </div>
             </div>
 
-            <form id="billingForm" action="{% url 'payment:process_order' %}" method="post">
+            <form id="billingForm" action="{% url 'payment:create_checkout_session' %}" method="post">
                 {% csrf_token %}
                 
                 {# Loop through billing form fields to apply Tailwind classes #}

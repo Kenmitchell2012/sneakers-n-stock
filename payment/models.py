@@ -37,6 +37,15 @@ class Order(models.Model):
     date_ordered = models.DateTimeField(auto_now_add=True)
     shipped = models.BooleanField(default=False)
     date_shipped = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=datetime.datetime.now)
+
+    # --- NEW STRIPE FIELDS ---
+    payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True) # For idempotency
+    stripe_checkout_session_id = models.CharField(max_length=255, null=True, blank=True, unique=True) # For reference
+    # --- END NEW STRIPE FIELDS ---
+
+    class Meta:
+        ordering = ('-created_at',)
 
     def __str__(self):
          return f'Order #{self.id} - ${self.amount_paid:.2f} Purchased by {self.user}'
