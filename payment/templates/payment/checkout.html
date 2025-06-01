@@ -43,7 +43,27 @@
 
                 <style>
                     #shipping_form input, #shipping_form select, #shipping_form textarea { 
-                        @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
+                        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        appearance: none;
+                        border: 1px solid #d1d5db;
+                        border-radius: 0.25rem;
+                        width: 100%;
+                        padding-top: 0.5rem;
+                        padding-bottom: 0.5rem;
+                        padding-left: 0.75rem;
+                        padding-right: 0.75rem;
+                        color: #4a5568;
+                        line-height: 1.25;
+                        outline: none;
+                    }
+                    #shipping_form input:focus,
+                    #shipping_form select:focus,
+                    #shipping_form textarea:focus {
+                        outline: none; 
+                        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); 
+                        border-color: #4299e1; 
                     }
                 </style>
                 <button type="submit" class="mt-6 w-full px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">
@@ -55,13 +75,17 @@
         <div class="bg-gray-100 p-8 rounded-2xl shadow-xl border border-gray-200 lg:col-span-1 order-1 lg:order-2">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Your Order</h2>
             <ul class="divide-y divide-gray-300">
-                {% for cart_item in cart_items %} {# Changed 'item' to 'cart_item' for consistency #}
+                {% for cart_item in cart_items %}
                     <li class="flex items-center py-4">
-                        {% if cart_item.item.images.first %}
-                            <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-20 h-20 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm">
-                        {% else %}
-                            <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-20 h-20 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm">
-                        {% endif %}
+                        {# --- IMAGE CONTAINER --- #}
+                        <div class="w-20 h-20 bg-white rounded-lg mr-4 flex items-center justify-center p-1 border border-gray-200 shadow-sm"> {# Added wrapper div and styling #}
+                            {% if cart_item.item.images.first %}
+                                <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
+                            {% else %}
+                                <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
+                            {% endif %}
+                        </div>
+                        {# --- END IMAGE CONTAINER --- #}
                         <div class="flex-grow">
                             <h3 class="text-lg font-semibold text-gray-900">{{ cart_item.item.name }}</h3>
                             {% if cart_item.size_variant %}

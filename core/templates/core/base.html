@@ -133,7 +133,11 @@
             </div>
             
             <div class="flex items-center mb-4">
-                <img id="modalItemImage" class="w-24 h-24 object-cover rounded-lg mr-4 border border-gray-200 shadow-sm" src="" alt="Added Item">
+                {# --- IMAGE CONTAINER --- #}
+                <div class="w-24 h-24 bg-gray-100 rounded-lg mr-4 flex items-center justify-center p-2 border border-gray-200 shadow-sm"> {# Added wrapper div and styling #}
+                    <img id="modalItemImage" class="w-full h-full object-contain" src="" alt="Added Item"> {# Changed object-cover to object-contain #}
+                </div>
+                {# --- END IMAGE CONTAINER --- #}
                 <div>
                     <p class="text-gray-800 text-lg font-semibold mb-1">Price: $<span id="modalItemPrice"></span></p>
                     <p class="text-gray-600 mb-1">Size: <span id="modalItemSize"></span></p>
