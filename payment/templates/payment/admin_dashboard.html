@@ -6,36 +6,49 @@
 {% block content %}
 <div class="bg-gray-100 py-10 px-4 md:px-8 lg:px-16">
     <div class="container mx-auto max-w-5xl">
-        <h1 class="text-3xl font-bold mb-8">Admin Overview</h1>
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">Admin Overview</h1> {# Added text-gray-800 for consistency #}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Total Orders -->
-            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-300">
+        {# Adjusted grid to 3 columns on medium screens, 2 on small, for 6 total cards #}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"> 
+            <div class="bg-white p-6 rounded-xl shadow-md border border-blue-300 transform hover:scale-105 transition duration-200 ease-in-out"> {# Added hover effect #}
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">📊 Total Orders</h2>
                 <p class="text-3xl font-bold text-blue-600">{{ total_orders }}</p>
+                <p class="text-sm text-gray-500 mt-2">All orders received</p> {# Added description #}
             </div>
 
-            <!-- Shipped Orders -->
-            <a href="{% url 'payment:shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-green-300 hover:shadow-lg transition">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">✅ Shipped Orders</h2>
+            <a href="{% url 'payment:shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-green-300 transform hover:scale-105 transition duration-200 ease-in-out">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">✅ Shipped Orders (Count)</h2> {# Clarified "Count" #}
                 <p class="text-3xl font-bold text-green-600">{{ shipped_orders }}</p>
-                <p class="text-sm text-gray-600">Total Shipping: <strong class="text-green-700">${{ total_shipping|floatformat:2 }}</strong></p>
-                <p class="text-sm text-gray-500 mt-1">View all shipped orders</p>
+                <p class="text-sm text-gray-500 mt-2">View all shipped orders</p>
             </a>
 
-            <!-- Unshipped Orders -->
-            <a href="{% url 'payment:not_shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-yellow-300 hover:shadow-lg transition">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">📦 Unshipped Orders</h2>
+            <a href="{% url 'payment:not_shipped_dashboard' %}" class="block bg-white p-6 rounded-xl shadow-md border border-yellow-300 transform hover:scale-105 transition duration-200 ease-in-out">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📦 Unshipped Orders (Count)</h2> {# Clarified "Count" #}
                 <p class="text-3xl font-bold text-yellow-600">{{ unshipped_orders }}</p>
-                <p class="text-sm text-gray-600">Total Pending: <strong class="text-yellow-700">${{ total_pending|floatformat:2 }}</strong></p>
-                <p class="text-sm text-gray-500 mt-1">View unshipped queue</p>
+                <p class="text-sm text-gray-500 mt-2">View unshipped queue</p>
             </a>
 
-            <!-- Revenue -->
-            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-300">
+            <div class="bg-white p-6 rounded-xl shadow-md border border-purple-300 transform hover:scale-105 transition duration-200 ease-in-out"> {# Changed border color, added hover #}
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">💰 Total Revenue</h2>
                 <p class="text-3xl font-bold text-indigo-600">${{ total_revenue|floatformat:2 }}</p>
+                <p class="text-sm text-gray-500 mt-2">Sum of all paid orders</p> {# Added description #}
             </div>
+
+            {# --- NEW CARD: Total Shipped Sales Value --- #}
+            <div class="bg-white p-6 rounded-xl shadow-md border border-green-400 transform hover:scale-105 transition duration-200 ease-in-out">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📈 Shipped Sales Value</h2>
+                <p class="text-3xl font-bold text-green-700">${{ total_shipped_sales_value|floatformat:2 }}</p>
+                <p class="text-sm text-gray-500 mt-2">Total value of all shipped orders</p>
+            </div>
+            {# --- END NEW CARD --- #}
+
+            {# --- NEW CARD: Total Pending Sales Value --- #}
+            <div class="bg-white p-6 rounded-xl shadow-md border border-orange-400 transform hover:scale-105 transition duration-200 ease-in-out">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📉 Pending Sales Value</h2>
+                <p class="text-3xl font-bold text-orange-600">${{ total_pending_sales_value|floatformat:2 }}</p>
+                <p class="text-sm text-gray-500 mt-2">Total value of all unshipped orders</p>
+            </div>
+            {# --- END NEW CARD --- #}
         </div>
     </div>
 </div>

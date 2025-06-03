@@ -1,80 +1,98 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% load math_filters %}
+{% load math_filters %} 
 {% block title %}Order #{{ order.id }} Details | Admin Dashboard{% endblock %}
 
 {% block content %}
-<button onclick="history.back()" class="mb-6 px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded hover:bg-gray-300">
-    ← Back
-</button>
+<div class="max-w-5xl mx-auto px-4 py-8"> 
+    <a onclick="history.back()" class="inline-block mb-6 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition duration-150 transform hover:-translate-y-0.5">
+        ← Back
+    </a>
 
-<div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
-    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-300">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">🧾 Order #{{ order.id }} Details</h1>
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200"> 
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">🧾 Order #{{ order.id }} Details</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <!-- Left Column -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6"> {# Increased gap #}
             <div>
-                <p class="text-sm text-gray-700"><strong>Customer:</strong> {{ order.full_name }}</p>
-                <p class="text-sm text-gray-700"><strong>Email:</strong> {{ order.email }}</p>
-                <p class="text-sm text-gray-700"><strong>Phone:</strong> {{ order.phone }}</p>
-                <p class="text-sm text-gray-700"><strong>Shipping Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Customer & Shipping</h2>
+                <p class="text-base text-gray-700 mb-1"><strong>Name:</strong> {{ order.full_name }}</p>
+                <p class="text-base text-gray-700 mb-1"><strong>Email:</strong> {{ order.email }}</p>
+                <p class="text-base text-gray-700 mb-1"><strong>Phone:</strong> {{ order.shipping_phone_number }}</p>
+                <p class="text-base text-gray-700 mt-2"><strong>Shipping Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
             </div>
 
-            <!-- Right Column -->
-            <div class="space-y-2">
-                <p class="text-sm text-gray-700"><strong>Date Ordered:</strong> {{ order.date_ordered|date:"M d, Y" }}</p>
+            <div class="space-y-4"> 
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Order Status</h2>
+                <p class="text-base text-gray-700"><strong>Date Ordered:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                {# ADD THIS BLOCK BELOW "Date Ordered" #}
+                {% if order.date_shipped %}
+                    <p class="text-base text-gray-700"><strong>Date Shipped:</strong> {{ order.date_shipped|date:"M d, Y H:i" }}</p>
+                {% else %}
+                    <p class="text-base text-gray-700"><strong>Date Shipped:</strong> Not yet shipped</p>
+                {% endif %}
+                {# END ADD THIS BLOCK #}
 
-                <div class="text-sm text-gray-700 flex items-center justify-between">
+                <div class="text-base text-gray-700 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"> {# Styled status display #}
                     <span><strong>Status:</strong>
-                        {% if order.shipped %}
-                            <span class="text-green-600 font-semibold">Shipped</span>
+                        {% if order.status == 'shipped' %}
+                            <span class="text-green-600 font-bold ml-2">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'pending' %}
+                            <span class="text-yellow-600 font-bold ml-2">{{ order.get_status_display }}</span>
                         {% else %}
-                            <span class="text-yellow-600 font-semibold">Not Shipped</span>
+                            <span class="text-gray-600 font-bold ml-2">{{ order.get_status_display }}</span>
                         {% endif %}
                     </span>
-                    <form method="post" class="ml-4">
+                    
+                    {# Status Update Form #}
+                    <form method="post" class="ml-4 flex-shrink-0">
                         {% csrf_token %}
-                        {% if order.shipped %}
-                            <input type="hidden" name="shipping_status" value="false">
+                        {% if order.status == 'shipped' %}
+                            <input type="hidden" name="shipping_status" value="pending">
+                            <button type="submit"
+                                class="px-4 py-2 text-sm rounded-lg border font-semibold transition duration-150 hover:-translate-y-0.5 transform
+                                    bg-red-100 text-red-700 border-red-300 hover:bg-red-200 shadow-sm">
+                                Mark as Pending
+                            </button>
                         {% else %}
-                            <input type="hidden" name="shipping_status" value="true">
-                        {% endif %}
-                        <button type="submit"
-                            class="px-3 py-1.5 text-sm rounded border font-medium transition duration-150
-                                {% if order.shipped %}
-                                    bg-red-50 text-red-700 border-red-300 hover:bg-red-100
-                                {% else %}
-                                    bg-green-50 text-green-700 border-green-300 hover:bg-green-100
-                                {% endif %}">
-                            {% if order.shipped %}
-                                Mark as Not Shipped
-                            {% else %}
+                            <input type="hidden" name="shipping_status" value="shipped">
+                            <button type="submit"
+                                class="px-4 py-2 text-sm rounded-lg border font-semibold transition duration-150 hover:-translate-y-0.5 transform
+                                    bg-green-100 text-green-700 border-green-300 hover:bg-green-200 shadow-sm">
                                 Mark as Shipped
-                            {% endif %}
-                        </button>
+                            </button>
+                        {% endif %}
                     </form>
                 </div>
 
-                <p class="text-sm text-gray-700"><strong>Total Paid:</strong> ${{ order.amount_paid }}</p>
-                <p class="text-sm text-gray-700"><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                <p class="text-base text-gray-700 mt-2"><strong>Total Paid:</strong> <strong class="text-indigo-600">${{ order.amount_paid|floatformat:2 }}</strong></p>
+                <p class="text-base text-gray-700"><strong>Payment Intent ID:</strong> <span class="text-xs break-all">{{ order.payment_intent_id }}</span></p>
+                <p class="text-base text-gray-700"><strong>Checkout Session ID:</strong> <span class="text-xs break-all">{{ order.stripe_checkout_session_id }}</span></p>
             </div>
         </div>
 
-        <!-- Order Items -->
-        <div class="border-t pt-4">
-            <h2 class="text-lg font-semibold text-gray-800 mb-3">📦 Items in Order</h2>
+        <div class="border-t border-gray-300 pt-6 mt-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📦 Items in Order</h2>
 
             {% if order_items %}
-                <ul class="space-y-3">
-                    {% for item in order_items %}
-                        <li class="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <div>
-                                <p class="text-sm text-gray-800 font-medium">{{ item.item.name }}</p>
-                                <p class="text-xs text-gray-600">Quantity: {{ item.quantity }}</p>
+                <ul class="space-y-4">
+                    {% for item_in_order in order_items %}
+                        <li class="flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex items-center">
+                                {% if item_in_order.item.images.first %}
+                                    <img src="{{ item_in_order.item.images.first.image.url }}" class="w-16 h-16 object-contain rounded-lg mr-3 border border-gray-200" alt="{{ item_in_order.item.name }}">
+                                {% else %}
+                                    <img src="{% static 'media/item_images/images.png' %}" class="w-16 h-16 object-contain rounded-lg mr-3 border border-gray-200" alt="Placeholder">
+                                {% endif %}
+                                <div>
+                                    <p class="text-md text-gray-800 font-semibold">{{ item_in_order.item.name }}</p>
+                                    {% if item_in_order.size_variant %}
+                                        <p class="text-sm text-gray-600">Size: {{ item_in_order.size_variant.size }}</p>
+                                    {% endif %}
+                                    <p class="text-sm text-gray-600">Quantity: {{ item_in_order.quantity }}</p>
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-800 font-semibold">
-                                ${{ item.price|floatformat:2 }} × {{ item.quantity }} = ${{ item.price|multiply:item.quantity|floatformat:2 }}
+                            <div class="text-md text-gray-800 font-bold">
+                                ${{ item_in_order.price|floatformat:2 }} × {{ item_in_order.quantity }} = ${{ item_in_order.price|multiply:item_in_order.quantity|floatformat:2 }}
                             </div>
                         </li>
                     {% endfor %}
@@ -86,11 +104,12 @@
     </div>
 </div>
 
-<!-- Navigation -->
-<button onclick="history.back()" class="mt-6 px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded hover:bg-gray-300">
-    ← Back
-</button>
-<a href="{% url 'payment:admin_dashboard' %}" class="inline-block mt-6 text-sm text-blue-600 hover:underline">
-    ← Back to Dashboard
-</a>
+<div class="max-w-4xl mx-auto px-4 py-4 flex justify-between">
+    <a onclick="history.back()" class="inline-block px-6 py-3 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition duration-200 ease-in-out transform hover:-translate-y-1">
+        ← Back
+    </a>
+    <a href="{% url 'payment:admin_dashboard' %}" class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition duration-200 ease-in-out transform hover:-translate-y-1">
+        ← Back to Dashboard
+    </a>
+</div>
 {% endblock %}

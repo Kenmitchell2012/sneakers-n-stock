@@ -16,9 +16,10 @@ urlpatterns = [
     path('order_detail/<int:order_id>/', views.order_detail, name='order_detail'),
     path('user_orders/', views.user_orders, name='user_orders'),
     path('orders/<int:order_id>/', views.user_order_detail, name='user_order_detail'),
+    
 
 # --- PATTERN FOR STRIPE CHECKOUT ---
-    path('create-checkout-session/', views.create_checkout_session, name='create_checkout_session'),
+    # path('create-checkout-session/', views.create_checkout_session, name='create_checkout_session'),
     # --- END STRIPE URL PATTERN ---
 
     # --- Add placeholder URLs for success and cancel pages ---
