@@ -9,12 +9,16 @@ from django.contrib.auth.models import User
 from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, F # Import F for database expressions
+from django.db import models # For models.Count in conversation, if needed
+from django.db.models import Prefetch # Import Prefetch for nested prefetching
 
 import stripe
 import json
 import logging
 
-from items.models import Items, SizeVariant
+from conversation.models import Conversation
+from items.models import Items, SizeVariant, ItemImage
 from cart.models import Cart, CartItem
 from payment.models import Order, OrderItem, ShippingAddress
 from .forms import ShippingAddressForm, PaymentForm # Assuming these are in payment.forms
@@ -68,10 +72,15 @@ def _create_stripe_checkout_session_internal(request, cart, shipping_info_cleane
         'shipping_phone_number': shipping_info_cleaned_data.get('shipping_phone_number', ''),
     }
 
-    # Your debug logging will now show the correct data if the form populated it
+    # debug logging will show the correct data if the form populated it
     logger.info(f"DEBUG: Metadata being sent to Stripe: {metadata}")
     logger.info(f"DEBUG: Line items being sent to Stripe: {line_items}")
     logger.info(f"DEBUG: Success URL: {success_url}, Cancel URL: {cancel_url}")
+
+    customer_email_for_stripe = request.user.email if request.user.is_authenticated and request.user.email else None
+
+    if customer_email_for_stripe == '':
+        customer_email_for_stripe = None 
 
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -79,7 +88,9 @@ def _create_stripe_checkout_session_internal(request, cart, shipping_info_cleane
             mode='payment',
             success_url=success_url,
             cancel_url=cancel_url,
-            customer_email=request.user.email if request.user.is_authenticated else None,
+            customer_email=customer_email_for_stripe,
+            # Use the authenticated user's email if available, otherwise None
+            # customer_email=request.user.email if request.user.is_authenticated else None,
             client_reference_id=request.user.id if request.user.is_authenticated else None,
             metadata=metadata,
             shipping_address_collection={
@@ -311,8 +322,19 @@ def user_orders(request):
     """
     Displays a list of all orders for the logged-in user.
     """
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'payment/user_orders.html', {'orders': orders})
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+    conversation_count = conversations.count()
+    orders = Order.objects.filter(user=request.user).order_by('-created_at').annotate(
+        total_items_in_order=Sum('order_items__quantity', default=0) # Sum of all OrderItem quantities
+    ).prefetch_related(
+        Prefetch('order_items__item__images', queryset=ItemImage.objects.filter(image__isnull=False)) # Prefetch images, optionally filter out null image links
+    )
+
+    context = {
+        'orders': orders,
+        'conversation_count': conversation_count,  # Pass the count to the template
+    }
+    return render(request, 'payment/user_orders.html', context)
 
 @login_required
 def user_order_detail(request, order_id):
@@ -339,33 +361,57 @@ def admin_dashboard(request):
         messages.error(request, "Access denied. You must be a superuser to view this page.")
         return redirect('core:index')
 
-    all_orders = Order.objects.all()
-    shipped_orders_queryset = Order.objects.filter(status='shipped')
-    unshipped_orders_queryset = Order.objects.filter(status='pending')
+    # --- 1. Get Filter Parameter ---
+    # Default to showing 'pending' orders if no filter or 'all' is explicitly requested
+    status_filter = request.GET.get('status', 'pending') # Default filter
 
-    total_orders = all_orders.count()
+    # --- 2. Calculate Summary Metrics (for the top cards) ---
+    all_orders_queryset = Order.objects.all()
+    shipped_orders_queryset = Order.objects.filter(status='shipped')
+    unshipped_orders_queryset = Order.objects.filter(status='pending') # Or 'delivered', 'canceled'
+
+    total_orders_count = all_orders_queryset.count()
     shipped_orders_count = shipped_orders_queryset.count()
     unshipped_orders_count = unshipped_orders_queryset.count()
 
-    total_revenue_value = all_orders.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
+    total_revenue_value = all_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
     total_shipped_sales_value = shipped_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
     total_pending_sales_value = unshipped_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
 
+    # --- 3. Filter Orders for the List Display (bottom half) ---
+    orders_for_list = Order.objects.all().order_by('-created_at') # Start with all orders
+    
+    if status_filter == 'shipped':
+        orders_for_list = orders_for_list.filter(status='shipped')
+    elif status_filter == 'pending':
+        orders_for_list = orders_for_list.filter(status='pending')
+    elif status_filter == 'delivered': # Add if you plan to filter by delivered
+        orders_for_list = orders_for_list.filter(status='delivered')
+    elif status_filter == 'canceled': # Add if you plan to filter by canceled
+        orders_for_list = orders_for_list.filter(status='canceled')
+    # If status_filter is 'all' or an invalid value, it will show all orders by default (which is good)
+    
     context = {
-        'total_orders': total_orders,
-        'shipped_orders': shipped_orders_count,
-        'unshipped_orders': unshipped_orders_count,
+        # Summary Metrics
+        'total_orders_count': total_orders_count, # Renamed for clarity with _count suffix
+        'shipped_orders_count': shipped_orders_count,
+        'unshipped_orders_count': unshipped_orders_count,
         'total_revenue': total_revenue_value,
         'total_shipped_sales_value': total_shipped_sales_value,
         'total_pending_sales_value': total_pending_sales_value,
+
+        # For the Order List
+        'orders_for_list': orders_for_list, # The filtered list of orders
+        'current_status_filter': status_filter, # To highlight active filter in template
     }
     return render(request, 'payment/admin_dashboard.html', context)
 
+# --- Order Detail View for Admins ---
 @login_required
 def order_detail(request, order_id):
     """
     Displays the details of a specific order for superusers,
-    allowing them to update the order's shipping status.
+    allowing them to update the order's shipping status and tracking number.
     """
     if not request.user.is_superuser:
         messages.error(request, 'Access denied. You must be logged in as an admin.')
@@ -375,30 +421,63 @@ def order_detail(request, order_id):
     order_items_queryset = OrderItem.objects.filter(order=order)
     items_total = sum(item.price * item.quantity for item in order_items_queryset)
 
-    # `items` list is prepared for template iteration, if required.
-    items = [order_item.item for order_item in order_items_queryset]
+    items = [order_item.item for order_item in order_items_queryset] 
+
 
     if request.method == 'POST':
-        new_status = request.POST.get('shipping_status')
+        # Retrieve the new status value and tracking number from the form submission
+        new_status = request.POST.get('shipping_status') 
+        tracking_number_input = request.POST.get('tracking_number', '').strip() # Get tracking number, default to empty string
 
-        valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
-        if new_status and new_status in valid_statuses:
-            order.status = new_status
-            order.save(update_fields=['status'])
-            messages.success(request, f'Order status updated to {order.get_status_display()}.')
-        else:
-            messages.error(request, 'Invalid status provided.')
+        try:
+            with transaction.atomic(): # Ensure both updates are atomic
+                status_updated = False
+                tracking_updated = False
+
+                # Update order status if provided and valid
+                valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
+                if new_status and new_status in valid_statuses:
+                    # Only update if the status is actually changing
+                    if order.status != new_status:
+                        order.status = new_status 
+                        order.save(update_fields=['status']) 
+                        messages.success(request, f'Order status updated to {order.get_status_display()}.')
+                        status_updated = True
+                elif new_status: # If new_status was provided but invalid
+                    messages.error(request, 'Invalid status provided.') 
+
+                # Update tracking number if it's different from current
+                # Note: 'tracking_number' in request.POST checks if the field was present in the form,
+                # even if it was empty. This allows clearing the tracking number.
+                if 'tracking_number' in request.POST and order.tracking_number != tracking_number_input:
+                    order.tracking_number = tracking_number_input if tracking_number_input else None # Save None if empty string
+                    order.save(update_fields=['tracking_number'])
+                    if tracking_number_input:
+                        messages.success(request, 'Tracking number updated.')
+                    else:
+                        messages.info(request, 'Tracking number cleared.')
+                    tracking_updated = True
+                
+                if not (status_updated or tracking_updated):
+                    messages.info(request, 'No changes detected for update.')
+
+
+        except Exception as e:
+            logger.error(f"Error updating order {order_id} details: {e}", exc_info=True)
+            messages.error(request, "An error occurred while updating order details.")
 
         return redirect('payment:order_detail', order_id=order_id)
 
+    # For GET requests, render the detail page
     context = {
         'order': order,
-        'order_items': order_items_queryset,
-        'items': items,
+        'order_items': order_items_queryset, 
+        'items': items, 
         'items_total': items_total,
     }
     return render(request, 'payment/order_detail.html', context)
 
+# --- Shipped and Not Shipped Dashboards for Superusers ---
 @login_required
 def shipped_dashboard(request):
     """
@@ -419,6 +498,7 @@ def shipped_dashboard(request):
     }
     return render(request, 'payment/shipped_dashboard.html', context)
 
+# --- Not Shipped Dashboard for Superusers ---
 @login_required
 def not_shipped_dashboard(request):
     """

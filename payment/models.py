@@ -48,6 +48,7 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     shipping_phone_number = models.CharField(max_length=20, blank=True, null=True) # Max length for phone number
     date_shipped = models.DateTimeField(null=True, blank=True) # To store when it was shipped
+    tracking_number = models.CharField(max_length=255, blank=True, null=True) 
 
     payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
     stripe_checkout_session_id = models.CharField(max_length=255, null=True, blank=True, unique=True)

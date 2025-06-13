@@ -1,36 +1,40 @@
-<div class="w-full relative z-50"> {# Added w-full for full width, increased z-index for dropdowns #}
-    <nav class="bg-white py-4 px-6 md:px-12 flex justify-between items-center shadow-md border-b border-gray-100"> {# Added shadow, more padding, lighter border #}
-        <a href="{% url 'core:index' %}" class="text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors duration-200"> {# Larger, bolder logo, hover effect #}
+<div class="w-full relative z-50">
+    <nav class="bg-white py-4 px-6 md:px-12 flex justify-between items-center shadow-md border-b border-gray-100">
+        <a href="{% url 'core:index' %}" class="text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors duration-200">
             <i class="fa-solid fa-shoe-prints mr-2"></i> SneakerzInStock
         </a>
         
-        <div class="block md:hidden"> {# Hidden on desktop #}
-            <button id="mobile-menu-button" class="text-gray-700 hover:text-gray-900 focus:outline-none p-2 rounded-md"> {# Styled button #}
-                <i class="fa-solid fa-bars fa-xl"></i> {# Larger icon #}
+        <div class="flex items-center md:hidden space-x-4"> {# Container for mobile actions: cart and hamburger #}
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'cart:view_cart' %}" class="relative"> {# This link is always visible, not hidden on mobile #}
+                    <i class="fa-solid fa-cart-shopping fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
+                    {% if cart_item_count > 0 %}
+                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ cart_item_count }}</span>
+                    {% endif %}
+                </a>
+            {% endif %}
+            
+            <button id="mobile-menu-button" class="text-gray-700 hover:text-gray-900 focus:outline-none p-2 rounded-md">
+                <i class="fa-solid fa-bars fa-xl"></i>
             </button>
         </div>
 
-        <div class="hidden md:flex space-x-8 items-center"> {# Larger space-x for desktop links #}
+        <div class="hidden md:flex space-x-8 items-center"> {# This section is hidden on mobile #}
             {% if 'items/new' in request.path %}
                 <a href="{% url 'core:index' %}" class="text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Home</a>
             {% else %}
                 <a href="{% url 'item:new' %}" class="text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">New Item</a>
             {% endif %}
-            
             <a href="{% url 'item:items' %}" class="text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Search</a>
 
             {% if request.user.is_authenticated %}
-                <div class="relative group"> {# Use group for hover state #}
+                <div class="relative group">
                     <button id="user-menu-button" class="text-lg font-semibold text-gray-700 hover:text-teal-600 focus:outline-none flex items-center transition-colors duration-200">
                         Hello, {{ request.user.username| capfirst }}
-                        <i class="fa-solid fa-chevron-down ml-2 text-sm transform transition-transform duration-200 group-hover:rotate-180"></i> {# Animated chevron #}
+                        <i class="fa-solid fa-chevron-down ml-2 text-sm transform transition-transform duration-200 group-hover:rotate-180"></i>
                     </button>
                     
-                    {# Dropdown Menu - Animation classes will be added later with JS #}
-                    <div id="user-menu" class="absolute right-0 mt-2 w-56 py-2 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 scale-95 origin-top-right transform transition-all duration-200 ease-out z-50 invisible"> {# Default hidden with animation classes #}
-                        {# Dropdown Items - Reordered and restyled below #}
-                        
-                        {# Admin Links #}
+                    <div id="user-menu" class="absolute right-0 mt-2 w-56 py-2 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 scale-95 origin-top-right transform transition-all duration-200 ease-out z-50 invisible">
                         {% if request.user.is_superuser %}
                             <a href="{% url 'payment:admin_dashboard' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Admin Dashboard</a>
                             <a href="{% url 'payment:shipped_dashboard' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Shipped Dashboard</a>
@@ -38,7 +42,6 @@
                             <div class="my-1 border-t border-gray-200"></div> {# Divider #}
                         {% endif %}
                         
-                        {# User Personal Links #}
                         <a href="{% url 'payment:user_orders' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">My Orders</a>
                         <a href="{% url 'dashboard:index' request.user.username %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">My Dashboard</a>
                         <a href="{% url 'core:user_profile' request.user.username %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">My Profile</a>
@@ -46,26 +49,25 @@
                         <a href="{% url 'core:update_password' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Update Password</a>
                         <div class="my-1 border-t border-gray-200"></div> {# Divider #}
                         
-                        {# Logout Link #}
                         <a href="{% url 'core:logout_user' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-red-500 hover:text-white transition-colors duration-150">Logout</a>
                     </div>
                 </div>
         
-                <a href="{% url 'conversations:inbox' %}" class="relative"> {# md:block is redundant now #}
-                    <i class="fa-solid fa-envelope fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i> {# Added hover #}
+                <a href="{% url 'conversations:inbox' %}" class="relative">
+                    <i class="fa-solid fa-envelope fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
                     {% if inbox_unread_count > 0 %}
-                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full">{{ inbox_unread_count }}</span> {# Smaller badge #}
+                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full">{{ inbox_unread_count }}</span>
                     {% endif %}
                 </a>
 
-                <a href="{% url 'cart:view_cart' %}" class="relative"> {# md:block is redundant now #}
-                    <i class="fa-solid fa-cart-shopping fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i> {# Added hover #}
+                <a href="{% url 'cart:view_cart' %}" class="relative hidden md:block"> {# Hidden on mobile, visible on desktop #}
+                    <i class="fa-solid fa-cart-shopping fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
                     {% if cart_item_count > 0 %}
-                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ cart_item_count }}</span> {# Smaller badge #}
+                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ cart_item_count }}</span>
                     {% endif %}
                 </a>
             {% else %}
-                <div class="flex space-x-4"> {# Added flex space-x for these links #}
+                <div class="flex space-x-4">
                     {% if request.path == '/login/' %}
                         <a href="{% url 'core:signup' %}" class="text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Register</a>
                     {% else %}
@@ -77,12 +79,12 @@
     </nav>
 </div>
 
-<div id="mobile-menu" class="hidden md:hidden px-6 py-4 space-y-6 bg-gray-50 border-t border-gray-200 shadow-inner"> {# Lighter background, subtle shadow #}
+<div id="mobile-menu" class="hidden md:hidden px-6 py-4 space-y-6 bg-gray-50 border-t border-gray-200 shadow-inner">
     <a href="{% url 'item:new' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">New Item</a>
     <a href="{% url 'item:items' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Search</a>
     
     {% if request.user.is_authenticated %}
-        <div class="my-2 border-t border-gray-200"></div> {# Divider #}
+        <div class="my-2 border-t border-gray-200"></div>
         <a href="{% url 'payment:user_orders' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Orders</a>
         <a href="{% url 'dashboard:index' request.user.username %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Dashboard</a>
         <a href="{% url 'core:user_profile' request.user.username %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Profile</a>
@@ -93,10 +95,10 @@
                 <span class="ml-2 inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full">{{ inbox_unread_count }}</span>
             {% endif %}
         </a>
-        <div class="my-2 border-t border-gray-200"></div> {# Divider #}
+        <div class="my-2 border-t border-gray-200"></div>
         <a href="{% url 'core:logout_user' %}" class="block text-lg font-semibold text-gray-700 hover:text-red-500 transition-colors duration-200">Logout</a>
     {% else %}
-        <div class="my-2 border-t border-gray-200"></div> {# Divider #}
+        <div class="my-2 border-t border-gray-200"></div>
         {% if request.path == '/login/' %}
             <a href="{% url 'core:signup' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Register</a>
         {% else %}

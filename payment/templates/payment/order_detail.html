@@ -12,7 +12,7 @@
     <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200"> 
         <h1 class="text-3xl font-bold text-gray-800 mb-6">🧾 Order #{{ order.id }} Details</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6"> {# Increased gap #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6"> 
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-3">Customer & Shipping</h2>
                 <p class="text-base text-gray-700 mb-1"><strong>Name:</strong> {{ order.full_name }}</p>
@@ -24,32 +24,37 @@
             <div class="space-y-4"> 
                 <h2 class="text-xl font-semibold text-gray-800 mb-3">Order Status</h2>
                 <p class="text-base text-gray-700"><strong>Date Ordered:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
-                {# ADD THIS BLOCK BELOW "Date Ordered" #}
+                
+                {# Display date shipped if available #}
                 {% if order.date_shipped %}
                     <p class="text-base text-gray-700"><strong>Date Shipped:</strong> {{ order.date_shipped|date:"M d, Y H:i" }}</p>
                 {% else %}
                     <p class="text-base text-gray-700"><strong>Date Shipped:</strong> Not yet shipped</p>
                 {% endif %}
-                {# END ADD THIS BLOCK #}
 
-                <div class="text-base text-gray-700 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"> {# Styled status display #}
+                {# --- STATUS UPDATE FORM --- #}
+                <div class="text-base text-gray-700 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"> 
                     <span><strong>Status:</strong>
                         {% if order.status == 'shipped' %}
                             <span class="text-green-600 font-bold ml-2">{{ order.get_status_display }}</span>
                         {% elif order.status == 'pending' %}
                             <span class="text-yellow-600 font-bold ml-2">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'delivered' %}
+                            <span class="text-blue-600 font-bold ml-2">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'canceled' %}
+                            <span class="text-red-600 font-bold ml-2">{{ order.get_status_display }}</span>
                         {% else %}
                             <span class="text-gray-600 font-bold ml-2">{{ order.get_status_display }}</span>
                         {% endif %}
                     </span>
                     
-                    {# Status Update Form #}
-                    <form method="post" class="ml-4 flex-shrink-0">
+                    <form method="post" action="{% url 'payment:order_detail' order.id %}" class="ml-4 flex-shrink-0 flex items-center"> {# Changed action for clarity #}
                         {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status"> {# Hidden field to distinguish form submission #}
                         {% if order.status == 'shipped' %}
                             <input type="hidden" name="shipping_status" value="pending">
                             <button type="submit"
-                                class="px-4 py-2 text-sm rounded-lg border font-semibold transition duration-150 hover:-translate-y-0.5 transform
+                                class="px-3 py-1.5 text-sm rounded-lg border font-semibold transition duration-150 hover:-translate-y-0.5 transform
                                     bg-red-100 text-red-700 border-red-300 hover:bg-red-200 shadow-sm">
                                 Mark as Pending
                             </button>
@@ -63,6 +68,24 @@
                         {% endif %}
                     </form>
                 </div>
+                {# --- END STATUS UPDATE FORM --- #}
+
+                {# --- TRACKING NUMBER FORM --- #}
+                <div class="text-base text-gray-700 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 mt-4">
+                    <span><strong>Tracking Number:</strong></span>
+                    <form method="post" action="{% url 'payment:order_detail' order.id %}" class="ml-4 flex-grow flex items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_tracking"> {# Hidden field to distinguish form submission #}
+                        <input type="text" name="tracking_number" value="{{ order.tracking_number|default_if_none:'' }}" 
+                            class="flex-grow px-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800" 
+                            placeholder="Enter tracking number" /> 
+                        <button type="submit" 
+                                class="ml-2 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition">
+                            {% if order.tracking_number %} Edit {% else %} Save {% endif %} {# <--- CHANGED HERE #}
+                        </button>
+                    </form>
+                </div>
+                {# --- END TRACKING NUMBER FORM --- #}
 
                 <p class="text-base text-gray-700 mt-2"><strong>Total Paid:</strong> <strong class="text-indigo-600">${{ order.amount_paid|floatformat:2 }}</strong></p>
                 <p class="text-base text-gray-700"><strong>Payment Intent ID:</strong> <span class="text-xs break-all">{{ order.payment_intent_id }}</span></p>
@@ -76,23 +99,25 @@
             {% if order_items %}
                 <ul class="space-y-4">
                     {% for item_in_order in order_items %}
-                        <li class="flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="flex items-center">
+                        <li class="flex flex-col sm:flex-row items-center bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex-shrink-0 w-16 h-16 bg-white rounded-lg mr-3 mb-2 sm:mb-0 flex items-center justify-center p-1 border border-gray-200 shadow-sm"> {# Adjusted image size for better fit #}
                                 {% if item_in_order.item.images.first %}
-                                    <img src="{{ item_in_order.item.images.first.image.url }}" class="w-16 h-16 object-contain rounded-lg mr-3 border border-gray-200" alt="{{ item_in_order.item.name }}">
+                                    <img src="{{ item_in_order.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ item_in_order.item.name }}">
                                 {% else %}
-                                    <img src="{% static 'media/item_images/images.png' %}" class="w-16 h-16 object-contain rounded-lg mr-3 border border-gray-200" alt="Placeholder">
+                                    <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder">
                                 {% endif %}
-                                <div>
-                                    <p class="text-md text-gray-800 font-semibold">{{ item_in_order.item.name }}</p>
-                                    {% if item_in_order.size_variant %}
-                                        <p class="text-sm text-gray-600">Size: {{ item_in_order.size_variant.size }}</p>
-                                    {% endif %}
-                                    <p class="text-sm text-gray-600">Quantity: {{ item_in_order.quantity }}</p>
-                                </div>
                             </div>
-                            <div class="text-md text-gray-800 font-bold">
-                                ${{ item_in_order.price|floatformat:2 }} × {{ item_in_order.quantity }} = ${{ item_in_order.price|multiply:item_in_order.quantity|floatformat:2 }}
+
+                            <div class="flex-grow text-center sm:text-left">
+                                <p class="text-md text-gray-800 font-semibold">{{ item_in_order.item.name }}</p>
+                                {% if item_in_order.size_variant %}
+                                    <p class="text-sm text-gray-600">Size: {{ item_in_order.size_variant.size }}</p>
+                                {% endif %}
+                                <p class="text-sm text-gray-600">Quantity: {{ item_in_order.quantity }}</p>
+                            </div>
+                            <div class="flex-shrink-0 text-right text-md text-gray-800 font-bold sm:ml-4 mt-4 sm:mt-0">
+                                <p>${{ item_in_order.price|floatformat:2 }} × {{ item_in_order.quantity }}</p>
+                                <p class="text-lg text-gray-900 mt-1">Total: ${{ item_in_order.price|multiply:item_in_order.quantity|floatformat:2 }}</p>
                             </div>
                         </li>
                     {% endfor %}

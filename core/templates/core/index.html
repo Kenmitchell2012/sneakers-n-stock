@@ -16,6 +16,17 @@
     <div class="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-6">
         <h1 class="text-4xl md:text-5xl font-extrabold drop-shadow-lg">Welcome to Sneakerz-N-Stock</h1>
         <p class="mt-4 text-lg md:text-xl font-medium">Your freshest source for rare and hot sneakers</p>
+        
+        {# --- LIVE SEARCH BAR --- #}
+        <div class="relative mt-8 w-full max-w-xl mx-auto">
+            <input type="text" id="live-search-input" placeholder="Search for sneakers..."
+                   class="w-full p-4 rounded-full border border-gray-300 shadow-md text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow duration-200">
+            <div id="live-search-results" class="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto z-10 hidden">
+                {# Search results will be injected here by JavaScript #}
+            </div>
+        </div>
+        {# --- END LIVE SEARCH BAR --- #}
+
     </div>
 </div>
 
@@ -28,11 +39,11 @@
                     {% if item.images.all %}
                         <img src="{{ item.images.all.0.image.url }}"
                             alt="{{ item.name }}"
-                            class="h-60 w-full object-contain bg-gray-100 p-2"> {# <-- CHANGED HERE: object-contain & added padding/background #}
+                            class="h-60 w-full object-contain bg-gray-100 p-2">
                     {% else %}
                         <img src="{% static 'media/item_images/images.png' %}"
                             alt="Placeholder"
-                            class="h-60 w-full object-contain bg-gray-100 p-2"> {# <-- CHANGED HERE: object-contain & added padding/background #}
+                            class="h-60 w-full object-contain bg-gray-100 p-2">
                     {% endif %}
             
                     {% if item.quantity > 0 %}
@@ -54,16 +65,93 @@
                 </a>
             </div>
         {% empty %}
-            <div class="col-span-full text-center py-10">
-                <p class="text-xl text-gray-600 mb-4">No new arrivals to display yet.</p>
-                <a href="{% url 'item:new' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-200 ease-in-out transform hover:-translate-y-1 shadow-lg">
-                    Add Your First Item!
-                </a>
-            </div>
+            {# ... No new arrivals message ... #}
         {% endfor %}
     </div>
     <div class="text-center mt-10 text-sm text-gray-500">
         More items coming soon...
     </div>
 </section>
+
+{# --- LIVE SEARCH JAVASCRIPT --- #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('live-search-input');
+        const searchResultsContainer = document.getElementById('live-search-results');
+        let debounceTimeout;
+
+        if (searchInput && searchResultsContainer) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                // Clear previous timeout to debounce requests
+                clearTimeout(debounceTimeout);
+
+                if (query.length > 2) { // Only search if query is at least 3 characters long
+                    searchResultsContainer.classList.remove('hidden'); // Show container
+                    debounceTimeout = setTimeout(() => {
+                        fetch(`{% url 'item:live_search' %}?query=${encodeURIComponent(query)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                searchResultsContainer.innerHTML = ''; // Clear old results
+                                if (data.length > 0) {
+                                    data.forEach(item => {
+                                        const resultItem = document.createElement('a');
+                                        resultItem.href = item.url;
+                                        resultItem.classList.add('flex', 'items-center', 'p-3', 'hover:bg-gray-100', 'transition-colors', 'duration-150');
+                                        
+                                        // Image
+                                        const img = document.createElement('img');
+                                        img.src = item.image_url;
+                                        img.alt = item.name;
+                                        img.classList.add('w-12', 'h-12', 'object-contain', 'bg-gray-50', 'rounded-md', 'mr-3', 'border', 'border-gray-200');
+                                        resultItem.appendChild(img);
+
+                                        // Text content
+                                        const textDiv = document.createElement('div');
+                                        textDiv.classList.add('flex-grow');
+                                        const nameP = document.createElement('p');
+                                        nameP.classList.add('font-semibold', 'text-gray-800', 'text-sm');
+                                        nameP.textContent = item.name;
+                                        const priceP = document.createElement('p');
+                                        priceP.classList.add('text-gray-600', 'text-xs');
+                                        priceP.textContent = `$${item.price.toFixed(2)}`;
+                                        
+                                        textDiv.appendChild(nameP);
+                                        textDiv.appendChild(priceP);
+                                        resultItem.appendChild(textDiv);
+
+                                        searchResultsContainer.appendChild(resultItem);
+                                    });
+                                } else {
+                                    searchResultsContainer.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">No results found.</div>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching live search results:', error);
+                                searchResultsContainer.innerHTML = '<div class="p-3 text-red-500 text-sm text-center">Error loading results.</div>';
+                            });
+                    }, 300); // Debounce time: 300ms
+                } else {
+                    searchResultsContainer.classList.add('hidden'); // Hide container if query is too short
+                    searchResultsContainer.innerHTML = ''; // Clear results
+                }
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!searchInput.contains(event.target) && !searchResultsContainer.contains(event.target)) {
+                    searchResultsContainer.classList.add('hidden');
+                }
+            });
+            // Show results again if input is focused and has a query
+            searchInput.addEventListener('focus', function() {
+                if (this.value.trim().length > 2 && searchResultsContainer.children.length > 0) {
+                    searchResultsContainer.classList.remove('hidden');
+                }
+            });
+        }
+    });
+</script>
+{# --- END LIVE SEARCH JAVASCRIPT --- #}
 {% endblock %}

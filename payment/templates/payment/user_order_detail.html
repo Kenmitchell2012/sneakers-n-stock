@@ -1,42 +1,89 @@
 {% extends 'core/base.html' %}
 {% load static %}
-
+{% load math_filters %}
 {% block title %}Order #{{ order.id }} | My Orders | SneakerzInStock{% endblock %}
 
 {% block content %}
-<div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
-    <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-md border border-gray-300">
-        <h1 class="text-2xl font-bold mb-6 text-gray-800">🧾 Order #{{ order.id }}</h1>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <a onclick="history.back()" class="inline-block mb-6 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition duration-150 transform hover:-translate-y-0.5">
+        ← Back to My Orders
+    </a>
 
-        <div class="space-y-4 text-gray-700 text-sm">
-            <p><strong>Date Ordered:</strong> {{ order.date_ordered|date:"M d, Y" }}</p>
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Your Order #{{ order.id }}</h1>
 
-            {% if order.date_shipped %}
-                <p><strong>Status:</strong> ✅ Shipped on {{ order.date_shipped|date:"M d, Y" }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Order Details</h2>
+                <p class="text-base text-gray-700 mb-1"><strong>Date Ordered:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                
+                <p class="text-base text-gray-700 mb-1"><strong>Status:</strong> 
+                    {% if order.status == 'shipped' %}
+                        <span class="text-green-600 font-semibold">{{ order.get_status_display }} ✅</span>
+                    {% elif order.status == 'pending' %}
+                        <span class="text-yellow-600 font-semibold">{{ order.get_status_display }} 🚚</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="text-blue-600 font-semibold">{{ order.get_status_display }} 🎉</span>
+                    {% elif order.status == 'canceled' %}
+                        <span class="text-red-600 font-semibold">{{ order.get_status_display }} ❌</span>
+                    {% else %}
+                        <span class="text-gray-600 font-semibold">{{ order.get_status_display }}</span>
+                    {% endif %}
+                </p>
+                
+                {% if order.date_shipped %}
+                    <p class="text-base text-gray-700 mb-1"><strong>Date Shipped:</strong> {{ order.date_shipped|date:"M d, Y H:i" }}</p>
+                {% endif %}
+
+                <p class="text-base text-gray-700 mt-4"><strong>Total Paid:</strong> <strong class="text-indigo-600">${{ order.amount_paid|floatformat:2 }}</strong></p>
+                {% if order.tracking_number %}
+                    <p class="text-base text-gray-700 mb-1"><strong>Tracking Number:</strong> <span class="font-semibold text-blue-600 break-all">{{ order.tracking_number }}</span></p>
+                {% else %}
+                    <p class="text-base text-gray-700 mb-1"><strong>Tracking Number:</strong> N/A</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Shipping Details</h2>
+                <p class="text-base text-gray-700 mb-1"><strong>Name:</strong> {{ order.full_name }}</p>
+                <p class="text-base text-gray-700 mb-1"><strong>Email:</strong> {{ order.email }}</p>
+                <p class="text-base text-gray-700 mb-1"><strong>Phone:</strong> {{ order.shipping_phone_number }}</p>
+                <p class="text-base text-gray-700 mt-2"><strong>Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-300 pt-6 mt-6 md:col-span-2">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📦 Items in this order:</h2>
+
+            {% if order.order_items.all %} {# <--- CHANGED HERE: order.items.all to order.order_items.all #}
+                <ul class="space-y-6">
+                    {% for order_item in order.order_items.all %} {# <--- CHANGED HERE: order.items.all to order.order_items.all #}
+                        <li class="flex flex-col sm:flex-row items-center bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex-shrink-0 w-32 h-32 bg-white rounded-lg mr-6 mb-4 sm:mb-0 flex items-center justify-center p-2 border border-gray-200 shadow-sm">
+                                {% if order_item.item.images.first %}
+                                    <img src="{{ order_item.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ order_item.item.name }}">
+                                {% else %}
+                                    <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder">
+                                {% endif %}
+                            </div>
+
+                            <div class="flex-grow text-center sm:text-left">
+                                <p class="text-lg text-gray-800 font-semibold">{{ order_item.item.name }}</p>
+                                {% if order_item.size_variant %}
+                                    <p class="text-sm text-gray-600">Size: {{ order_item.size_variant.size }}</p>
+                                {% endif %}
+                                <p class="text-sm text-gray-600">Quantity: {{ order_item.quantity }}</p>
+                            </div>
+                            <div class="flex-shrink-0 text-right text-md text-gray-800 font-bold sm:ml-4 mt-4 sm:mt-0">
+                                <p>${{ order_item.price|floatformat:2 }} × {{ order_item.quantity }}</p>
+                                <p class="text-lg text-gray-900 mt-1">Total: ${{ order_item.price|multiply:order_item.quantity|floatformat:2 }}</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
             {% else %}
-                <p><strong>Status:</strong> 🚚 Not Shipped</p>
+                <p class="text-sm text-gray-600">No items found in this order.</p>
             {% endif %}
-
-            <p><strong>Shipping Address:</strong><br>{{ order.shipping_address|linebreaksbr }}</p>
-
-            <p><strong>Total Paid:</strong> ${{ order.amount_paid }}</p>
-        </div>
-
-        <div class="mt-6 border-t pt-4">
-            <h2 class="text-lg font-semibold text-gray-800 mb-3">Items in this order:</h2>
-            <ul class="space-y-2">
-                {% for item in order.order_items.all %}
-                    <li class="text-sm text-gray-600">
-                        {{ item.quantity }} × {{ item.item.name }} @ ${{ item.price }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="mt-6">
-            <a href="{% url 'payment:user_orders' %}" class="text-blue-600 hover:underline text-sm font-medium">
-                ← Back to My Orders
-            </a>
         </div>
     </div>
 </div>

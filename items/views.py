@@ -6,6 +6,9 @@ from .models import Items, Category, ItemImage
 from cart.models import Cart, CartItem
 from cart.forms import AddToCartForm
 from .forms import NewItemForm
+from django.http import JsonResponse
+from django.urls import reverse
+from django.templatetags.static import static
 
 from conversation.models import Conversation
 # Create your views here.
@@ -54,6 +57,38 @@ def items(request):
         'conversation_count': conversation_count, # Will be 0 for guests, actual count for logged-in
         'cart_item_count': cart_item_count,       # Will be 0 for guests, actual count for logged-in
         })
+
+# --- Live Search API Endpoint ---
+def live_search_items(request):
+    query = request.GET.get('query', '').strip() # Get search query, strip whitespace
+    results = []
+
+    if query:
+        # Perform the same search logic as your main items view
+        # Filter by name or description
+        search_results = Items.objects.filter(is_sold=False).filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        ).order_by('name')[:5] # Limit results for autocomplete performance (e.g., top 5)
+
+        for item in search_results:
+            # Prepare data for JSON response
+            item_data = {
+                'id': item.id,
+                'name': item.name,
+                'price': float(item.price), # Convert Decimal to float for JSON
+                'url': reverse('item:detail', args=[item.id]), # Generate detail URL
+                'image_url': '',
+            }
+            # Add first image URL if available
+            if item.images.exists() and item.images.first().image:
+                item_data['image_url'] = request.build_absolute_uri(item.images.first().image.url)
+            else:
+                item_data['image_url'] = request.build_absolute_uri(static('media/item_images/images.png')) # Default image
+
+            results.append(item_data)
+    
+    return JsonResponse(results, safe=False) # safe=False allows non-dict objects (like lists) to be returned
+# --- END LIVE SEARCH VIEW ---
 
 
 
