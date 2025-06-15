@@ -19,7 +19,7 @@
         
         {# --- LIVE SEARCH BAR --- #}
         <div class="relative mt-8 w-full max-w-xl mx-auto">
-            <input type="text" id="live-search-input" placeholder="Search for sneakers..."
+            <input type="text" id="live-search-input" placeholder="Search store..."
                    class="w-full p-4 rounded-full border border-gray-300 shadow-md text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow duration-200">
             <div id="live-search-results" class="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto z-10 hidden">
                 {# Search results will be injected here by JavaScript #}
@@ -87,7 +87,7 @@
                 // Clear previous timeout to debounce requests
                 clearTimeout(debounceTimeout);
 
-                if (query.length > 2) { // Only search if query is at least 3 characters long
+                if (query.length > 1) { // Only search if query is at least 2 characters long
                     searchResultsContainer.classList.remove('hidden'); // Show container
                     debounceTimeout = setTimeout(() => {
                         fetch(`{% url 'item:live_search' %}?query=${encodeURIComponent(query)}`)

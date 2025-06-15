@@ -14,6 +14,7 @@ from payment.models import ShippingAddress
 from cart.models import Cart
 from . models import UserProfile
 from items.models import Category, Items
+from notifications.models import Notification
 
 import logging
 from django.db import IntegrityError
@@ -40,7 +41,11 @@ def index(request):
         user = None
         conversation_count = 0
         cart_item_count = 0
-
+    # --- NEW: Calculate unread notifications count ---
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    # --- END NEW ---
     items = Items.objects.filter(is_sold=False).order_by('-created_at')[0:6]
     categories = Category.objects.all()
     items = Items.objects.filter(is_sold=False).order_by('-created_at')
@@ -51,6 +56,7 @@ def index(request):
         'conversation_count': conversation_count,
         'user': user,
         'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count,  # Pass unread count to context
     })
 
 def contact(request):

@@ -4,20 +4,22 @@
 
 {% block content %}
 <div class="bg-gray-100 py-8 px-4 md:px-8 lg:px-16">
-    <div class="container mx-auto max-w-5xl"> {# Adjusted max-w for content #}
+    <div class="container mx-auto max-w-5xl"> 
         <h1 class="text-3xl font-bold mb-8 text-gray-800">🧾 My Orders</h1>
 
         {% if orders %}
-            <div class="space-y-4"> {# Consistent spacing #}
+            <div class="space-y-4"> 
                 {% for order in orders %}
                     {# Make entire card clickable #}
                     <a href="{% url 'payment:user_order_detail' order.id %}" 
                        class="block bg-white p-4 rounded-xl shadow-md border border-gray-200 
-                              hover:bg-gray-50 hover:shadow-lg transition duration-150 ease-in-out"> {# Card styling and hover effects #}
-                        <div class="flex items-center justify-between mb-2"> 
+                              hover:bg-gray-50 hover:shadow-lg transition duration-150 ease-in-out">
+                        {# --- MAIN CARD CONTENT WRAPPER --- #}
+                        {# Added flex-wrap for mobile stacking, adjusted justify-between/items-center #}
+                        <div class="flex flex-wrap items-center justify-between -mb-2"> {# -mb-2 to offset py-2 on price/status #}
                             {# --- FIRST ITEM IMAGE --- #}
-                            <div class="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center p-1 border border-gray-200 shadow-sm mr-4">
-                                {% with first_order_item=order.order_items.first %} {# Get the first order item #}
+                            <div class="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center p-1 border border-gray-200 shadow-sm mr-4 mb-2"> {# Added mb-2 for mobile spacing #}
+                                {% with first_order_item=order.order_items.first %}
                                     {% if first_order_item and first_order_item.item.images.first %}
                                         <img src="{{ first_order_item.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ first_order_item.item.name }}">
                                     {% else %}
@@ -27,21 +29,25 @@
                             </div>
                             {# --- END FIRST ITEM IMAGE --- #}
 
-                            <div class="flex-grow"> {# Re-adjusted flex-grow for text content #}
+                            {# --- ORDER INFO (ID, Date, Total Items) --- #}
+                            <div class="flex-grow min-w-[150px] md:min-w-0 pr-4 mb-2"> {# Added min-w, pr-4, mb-2 for mobile #}
                                 <p class="text-lg font-semibold text-gray-800">Order #{{ order.id }}</p>
-                                <p class="text-sm text-gray-600">Placed on {{ order.created_at|date:"M d, Y H:i" }}</p>
-                                {# --- Total Items Count --- #}
-                                <p class="text-sm text-gray-600 mt-1">Total items: {{ order.total_items_in_order }}</p> 
-                                {# --- END Total Items Count --- #}
+                                <p class="text-sm text-gray-600">Placed on {{ order.created_at|date:"M d, Y H:i" }}</p> {# Added time #}
+                                <p class="text-sm text-gray-600 mt-1">Total items: {{ order.total_items_in_order }}</p>
                             </div>
-                            <div class="flex-shrink-0 text-right ml-4"> {# Adjusted for right alignment #}
+                            {# --- END ORDER INFO --- #}
+
+                            {# --- TOTAL PRICE & STATUS --- #}
+                            <div class="flex-shrink-0 text-right py-2"> {# Added py-2 for vertical spacing if wrapped #}
                                 <p class="text-lg font-bold text-gray-800">${{ order.amount_paid|floatformat:2 }}</p>
                                 <span class="text-sm px-2 py-1 rounded-full 
                                     {% if order.status == 'shipped' %}bg-green-100 text-green-700{% elif order.status == 'pending' %}bg-yellow-100 text-yellow-700{% elif order.status == 'delivered' %}bg-blue-100 text-blue-700{% elif order.status == 'canceled' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
                                     {{ order.get_status_display }}
                                 </span>
                             </div>
+                            {# --- END TOTAL PRICE & STATUS --- #}
                         </div>
+                        {# --- END MAIN CARD CONTENT WRAPPER --- #}
                     </a>
                 {% endfor %}
             </div>

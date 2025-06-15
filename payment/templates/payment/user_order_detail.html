@@ -55,28 +55,35 @@
         <div class="border-t border-gray-300 pt-6 mt-6 md:col-span-2">
             <h2 class="text-xl font-bold text-gray-800 mb-4">📦 Items in this order:</h2>
 
-            {% if order.order_items.all %} {# <--- CHANGED HERE: order.items.all to order.order_items.all #}
+            {% if order.order_items.all %}
                 <ul class="space-y-6">
-                    {% for order_item in order.order_items.all %} {# <--- CHANGED HERE: order.items.all to order.order_items.all #}
-                        <li class="flex flex-col sm:flex-row items-center bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="flex-shrink-0 w-32 h-32 bg-white rounded-lg mr-6 mb-4 sm:mb-0 flex items-center justify-center p-2 border border-gray-200 shadow-sm">
-                                {% if order_item.item.images.first %}
-                                    <img src="{{ order_item.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ order_item.item.name }}">
-                                {% else %}
-                                    <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder">
-                                {% endif %}
+                    {% for order_item in order.order_items.all %}
+                        <li class="flex flex-col sm:flex-row sm:items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+    
+                            <!-- Product Image -->
+                            <div class="w-full sm:w-32 md:w-36 flex-shrink-0 mx-auto sm:mx-0">
+                                <div class="w-full aspect-square bg-white rounded-lg border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+                                    {% if order_item.item.images.first %}
+                                        <img src="{{ order_item.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ order_item.item.name }}">
+                                    {% else %}
+                                        <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder">
+                                    {% endif %}
+                                </div>
                             </div>
 
-                            <div class="flex-grow text-center sm:text-left">
-                                <p class="text-lg text-gray-800 font-semibold">{{ order_item.item.name }}</p>
+                            <!-- Item Info -->
+                            <div class="flex flex-col flex-grow text-center sm:text-left gap-1">
+                                <p class="text-lg font-semibold text-gray-900 break-words">{{ order_item.item.name }}</p>
                                 {% if order_item.size_variant %}
                                     <p class="text-sm text-gray-600">Size: {{ order_item.size_variant.size }}</p>
                                 {% endif %}
-                                <p class="text-sm text-gray-600">Quantity: {{ order_item.quantity }}</p>
+                                <p class="text-sm text-gray-600">Qty: {{ order_item.quantity }}</p>
                             </div>
-                            <div class="flex-shrink-0 text-right text-md text-gray-800 font-bold sm:ml-4 mt-4 sm:mt-0">
-                                <p>${{ order_item.price|floatformat:2 }} × {{ order_item.quantity }}</p>
-                                <p class="text-lg text-gray-900 mt-1">Total: ${{ order_item.price|multiply:order_item.quantity|floatformat:2 }}</p>
+
+                            <!-- Price Info -->
+                            <div class="text-center sm:text-right sm:ml-auto mt-2 sm:mt-0">
+                                <p class="text-sm text-gray-800 font-medium">${{ order_item.price|floatformat:2 }} × {{ order_item.quantity }}</p>
+                                <p class="text-lg font-bold text-gray-900">Total: ${{ order_item.price|multiply:order_item.quantity|floatformat:2 }}</p>
                             </div>
                         </li>
                     {% endfor %}

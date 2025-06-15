@@ -4,107 +4,100 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-6 py-8">
-    <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">
-        Checkout <span class="text-gray-500 text-3xl">({{ cart_item_count }} items)</span>
-    </h1>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">
+    Checkout <span class="text-gray-500 text-2xl">({{ cart_item_count }} items)</span>
+  </h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 order-2 lg:order-1">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Shipping Information</h2>
-            <form method="post" action="{% url 'payment:checkout' %}" id="shipping_form">
-                {% csrf_token %}
-                
-                {# Loop through form fields to apply Tailwind classes #}
-                {% for field in shipping_form %}
-                    <div class="mb-4">
-                        <label for="{{ field.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">
-                            {{ field.label }}
-                        </label>
-                        {{ field }} {# This renders the input/select element #}
-                        {% if field.help_text %}
-                            <p class="text-gray-600 text-xs italic mt-1">{{ field.help_text }}</p>
-                        {% endif %}
-                        {% if field.errors %} {# <-- Display field-specific errors #}
-                            {% for error in field.errors %}
-                                <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                {% endfor %}
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Shipping Info -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-200 order-2 lg:order-1">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Shipping Information</h2>
+      <form method="post" action="{% url 'payment:checkout' %}" id="shipping_form">
+        {% csrf_token %}
+        {% for field in shipping_form %}
+          <div class="mb-4">
+            <label for="{{ field.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <p class="text-gray-500 text-xs italic mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+              <p class="text-red-600 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
 
-                {% if shipping_form.non_field_errors %} {# <-- Display general form errors #}
-                    <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-xl border border-red-200">
-                        {% for error in shipping_form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+        {% if shipping_form.non_field_errors %}
+          <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-300">
+            {% for error in shipping_form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
 
-                <style>
-                    #shipping_form input, #shipping_form select, #shipping_form textarea { 
-                        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
-                        -webkit-appearance: none;
-                        -moz-appearance: none;
-                        appearance: none;
-                        border: 1px solid #d1d5db;
-                        border-radius: 0.25rem;
-                        width: 100%;
-                        padding-top: 0.5rem;
-                        padding-bottom: 0.5rem;
-                        padding-left: 0.75rem;
-                        padding-right: 0.75rem;
-                        color: #4a5568;
-                        line-height: 1.25;
-                        outline: none;
-                    }
-                    #shipping_form input:focus,
-                    #shipping_form select:focus,
-                    #shipping_form textarea:focus {
-                        outline: none; 
-                        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); 
-                        border-color: #4299e1; 
-                    }
-                </style>
-                <button type="submit" class="mt-6 w-full px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">
-                    Go to Billing & Payment
-                </button>
-            </form>
-        </div>
+        <style>
+          #shipping_form input, #shipping_form select, #shipping_form textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            appearance: none;
+          }
+          #shipping_form input:focus,
+          #shipping_form select:focus,
+          #shipping_form textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+          }
+        </style>
 
-        <div class="bg-gray-100 p-8 rounded-2xl shadow-xl border border-gray-200 lg:col-span-1 order-1 lg:order-2">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Your Order</h2>
-            <ul class="divide-y divide-gray-300">
-                {% for cart_item in cart_items %}
-                    <li class="flex items-center py-4">
-                        {# --- IMAGE CONTAINER --- #}
-                        <div class="w-20 h-20 bg-white rounded-lg mr-4 flex items-center justify-center p-1 border border-gray-200 shadow-sm"> {# Added wrapper div and styling #}
-                            {% if cart_item.item.images.first %}
-                                <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
-                            {% else %}
-                                <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
-                            {% endif %}
-                        </div>
-                        {# --- END IMAGE CONTAINER --- #}
-                        <div class="flex-grow">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ cart_item.item.name }}</h3>
-                            {% if cart_item.size_variant %}
-                                <p class="text-gray-600 text-sm">Size: {{ cart_item.size_variant.size }}</p>
-                            {% endif %}
-                            <p class="text-gray-600 text-sm">Quantity: {{ cart_item.quantity }}</p>
-                        </div>
-                        <p class="text-gray-800 font-semibold">${{ cart_item.item.price|floatformat:2 }}</p>
-                    </li>
-                {% endfor %}
-            </ul>
-            <div class="mt-8 pt-6 border-t border-gray-300 flex justify-between items-center">
-                <p class="text-xl font-bold text-gray-900">Total Price:</p>
-                <p class="text-xl font-bold text-gray-900">${{ total_price|floatformat:2 }}</p>
-            </div>
-            <div class="mt-8 flex justify-between">
-                <a href="{% url 'cart:view_cart' %}" class="px-6 py-3 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Back to Cart</a>
-            </div>
-        </div>
+        <button type="submit" class="mt-6 w-full px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow hover:bg-blue-600 transition duration-200 transform hover:-translate-y-1">
+          Proceed to Payment
+        </button>
+      </form>
     </div>
+
+    <!-- Order Summary -->
+    <div class="lg:col-span-1 order-1 lg:order-2">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4 px-2">Your Order</h2>
+      <ul class="space-y-4">
+        {% for cart_item in cart_items %}
+        <li class="bg-white p-4 rounded-lg shadow-md border flex items-start gap-4">
+          <div class="flex-shrink-0 w-28 h-24 sm:w-32 sm:h-24 bg-gray-100 rounded-md border flex items-center justify-center overflow-hidden">
+            {% if cart_item.item.images.first %}
+              <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain">
+            {% else %}
+              <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain">
+            {% endif %}
+          </div>
+          <div class="flex flex-col justify-between flex-grow">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 break-words">{{ cart_item.item.name }}</h3>
+              {% if cart_item.size_variant %}
+                <p class="text-gray-600 text-sm">Size: {{ cart_item.size_variant.size }}</p>
+              {% endif %}
+              <p class="text-gray-600 text-sm">Qty: {{ cart_item.quantity }}</p>
+            </div>
+            <p class="text-right text-lg font-bold text-gray-800 mt-2">${{ cart_item.item.price|floatformat:2 }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="mt-8 bg-white border border-gray-200 p-4 rounded-lg shadow flex justify-between items-center">
+        <p class="text-xl font-semibold text-gray-800">Total Price:</p>
+        <p class="text-xl font-bold text-gray-900">${{ total_price|floatformat:2 }}</p>
+      </div>
+
+      <div class="mt-6">
+        <a href="{% url 'cart:view_cart' %}" class="w-full block text-center px-6 py-3 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition duration-200 transform hover:-translate-y-1">
+          Back to Cart
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -22,6 +22,7 @@ from items.models import Items, SizeVariant, ItemImage
 from cart.models import Cart, CartItem
 from payment.models import Order, OrderItem, ShippingAddress
 from .forms import ShippingAddressForm, PaymentForm # Assuming these are in payment.forms
+from notifications.models import Notification
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,10 @@ def checkout(request):
 
     total_price = sum(ci.quantity * ci.item.price for ci in cart_items)
     cart_item_count = sum(item.quantity for item in cart_items)
+    # notification_count = request.user.notifications.filter(is_read=False).count() if request.user.is_authenticated else 0
+        # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
 
     current_user = request.user
     shipping_user, created_shipping_address = ShippingAddress.objects.get_or_create(user=current_user)
@@ -156,6 +161,7 @@ def checkout(request):
         'total_price': total_price,
         'cart_item_count': cart_item_count,
         'shipping_form': shipping_form,
+        'unread_notifications_count': unread_notifications_count,  # For navbar
     }
     return render(request, 'payment/checkout.html', context)
 

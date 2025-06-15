@@ -8,12 +8,17 @@ from django.contrib import messages
 from conversation.models import Conversation
 from django.http import JsonResponse
 from django.db import transaction
+from notifications.models import Notification
 
 # Create your views here.
 @login_required
 def item_detail(request, item_id):
     item = get_object_or_404(Items, id=item_id)
     cart, created = Cart.objects.get_or_create(user=request.user)
+    # notification_count = 0 # Initialize notification count, if you have a notifications app
+        # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
     
     if request.method == 'POST':
         form = AddToCartForm(request.POST)
@@ -31,7 +36,9 @@ def item_detail(request, item_id):
     return render(request, 'item/detail.html', {
         'item': item,
         'form': form,
-        'related_items': related_items
+        'related_items': related_items,
+        # 'notification_count': notification_count, # For navbar
+        'unread_notifications_count': unread_notifications_count, # For navbar
     })
 
 
@@ -297,6 +304,10 @@ def view_cart(request):
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
     total_price = sum(ci.quantity * ci.item.price for ci in cart_items) 
+    # notification_count = 0 # Initialize notification count, if you have a notifications app
+        # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
     
     # --- NEW LOGIC: Determine if checkout is possible ---
     can_checkout = True # Assume true until an out-of-stock item is found
@@ -316,4 +327,5 @@ def view_cart(request):
         'total_price': total_price, 
         'cart_item_count': cart_item_count,
         'can_checkout': can_checkout, # <--- Pass this new flag to the template
+        'unread_notifications_count': unread_notifications_count, # For navbar
         })

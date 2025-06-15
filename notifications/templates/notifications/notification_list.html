@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Notifications | SneakerzInStock{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">
+        Your Notifications 
+        {% if unread_notifications_count > 0 %}
+            <span class="text-xl text-red-500">({{ unread_notifications_count }} unread)</span>
+        {% endif %}
+    </h1>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 max-w-2xl mx-auto">
+        {% if notifications %}
+            <div class="flex justify-end mb-4">
+                <form action="{% url 'notifications:mark_all_read' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="text-sm text-blue-600 hover:underline">Mark all as read</button>
+                </form>
+            </div>
+            <ul class="divide-y divide-gray-200">
+                {% for notification in notifications %}
+                    <li class="py-3 px-2 rounded-lg {% if not notification.is_read %}bg-blue-50{% endif %}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">{{ notification.message }}</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {{ notification.created_at|date:"M d, Y H:i" }}
+                                    {% if notification.order %}
+                                        | Order #{{ notification.order.id }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if not notification.is_read %}
+                                <form action="{% url 'notifications:mark_read' notification.id %}" method="post" class="ml-4 flex-shrink-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-xs text-blue-500 hover:underline">Mark as Read</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-center text-gray-600 py-8">You have no notifications yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

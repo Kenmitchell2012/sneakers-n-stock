@@ -9,6 +9,7 @@ from .forms import NewItemForm
 from django.http import JsonResponse
 from django.urls import reverse
 from django.templatetags.static import static
+from notifications.models import Notification
 
 from conversation.models import Conversation
 # Create your views here.
@@ -37,6 +38,11 @@ def items(request):
     conversation_count = 0
     cart_item_count = 0
 
+    # notification_count = 0 # Initialize notification count, if you have a notifications app
+    # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+
     # Only fetch user-specific data if the user is authenticated
     if request.user.is_authenticated:
         # Handle conversations
@@ -56,6 +62,7 @@ def items(request):
         'category_id': int(category_id),
         'conversation_count': conversation_count, # Will be 0 for guests, actual count for logged-in
         'cart_item_count': cart_item_count,       # Will be 0 for guests, actual count for logged-in
+        'unread_notifications_count': unread_notifications_count, # For navbar
         })
 
 # --- Live Search API Endpoint ---
@@ -99,6 +106,10 @@ def detail(request, pk):
     conversation_count = 0
     cart_item_count = 0
     form = AddToCartForm() # Initialize form for GET request (and unauthenticated users)
+    # notification_count = 0 # Initialize notification count, if you have a notifications app
+        # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
 
     # Only fetch user-specific data if the user is authenticated
     if request.user.is_authenticated:
@@ -124,6 +135,7 @@ def detail(request, pk):
         'conversation_count': conversation_count,
         'form': form, # This form will be for AddToCart, regardless of login status
         'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count, # For navbar
         # 'is_authenticated': request.user.is_authenticated, # Can pass this to template for explicit checks
     }
     return render(request, 'item/detail.html', context)

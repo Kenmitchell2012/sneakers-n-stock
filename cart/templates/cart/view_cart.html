@@ -5,97 +5,85 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl mb-6 font-semibold text-center">
-        Your Cart 
-        {% if cart.items.count > 0 %}
-            <a href="{% url 'cart:clear_cart' %}" class="text-red-500 hover:text-red-700 text-sm">Clear Cart</a>
-        {% endif %}
+<div class="w-full max-w-full mx-auto px-2 py-4">
+    <h1 class="text-lg font-semibold text-center mb-4">
+        Your Bag ({{ cart_item_count }})
     </h1>
 
-    {% if cart.items.all %}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-gray-100 p-6 rounded-xl shadow-lg">
-                <ul>
-                    {% for cart_item in cart.items.all %}
-                    <li class="flex flex-col lg:flex-row items-center mb-6 bg-white p-4 rounded-xl shadow-md">
-                        {# --- IMAGE CONTAINER --- #}
-                        <div class="w-24 h-24 bg-gray-100 rounded-xl mr-4 mb-4 lg:mb-0 flex items-center justify-center p-2 border border-gray-200"> {# Added flex/justify/items/p-2/border/bg #}
+    {% if cart.items.count > 0 %}
+        <div class="flex justify-end mb-4 pr-2">
+            <a href="{% url 'cart:clear_cart' %}" class="text-red-500 text-xs hover:underline">Clear Cart</a>
+        </div>
+
+        <div class="space-y-4">
+            {% for cart_item in cart.items.all %}
+                <div class="bg-white p-3 rounded-lg shadow flex flex-col gap-3">
+                    <div class="flex gap-3">
+                        {# Updated: Changed object-cover to object-contain, added p-1 for internal padding #}
+                        <div class="w-32 h-24 sm:w-36 sm:h-36 bg-gray-100 rounded overflow-hidden flex-shrink-0 border flex items-center justify-center p-1">
                             {% if cart_item.item.images.first %}
-                                <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
+                                <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain">
                             {% else %}
-                                <img src="{% static 'media/item_images/images.png' %}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain"> {# Changed object-cover to object-contain #}
+                                <img src="{% static 'media/item_images/images.png' %}" alt="No image" class="w-full h-full object-contain">
                             {% endif %}
                         </div>
-                        {# --- END IMAGE CONTAINER --- #}
 
-                        <div class="flex-1 text-center lg:text-left">
-                            <h2 class="text-xl font-semibold">{{ cart_item.item.name }}</h2>
+                        <div class="flex-1 text-sm">
+                            <p class="font-semibold text-gray-800 leading-snug">{{ cart_item.item.name }}</p>
                             {% if cart_item.size_variant %}
-                                <p class="text-gray-600">Size: {{ cart_item.size_variant.size }}</p>
+                                <p class="text-gray-500 text-xs">Size: {{ cart_item.size_variant.size }}</p>
                             {% endif %}
-                            
-                            {# --- STOCK CHECK AND QUANTITY UPDATE FORM --- #}
-                            {% if cart_item.quantity > cart_item.size_variant.quantity %}
-                                <p class="text-red-600 font-bold mt-2">
-                                    Out of Stock! Only {{ cart_item.size_variant.quantity }} available.
-                                </p>
-                                {% if cart_item.size_variant.quantity > 0 %}
-                                    <form action="{% url 'cart:update_quantity' cart_item.id %}" method="post" class="flex flex-col lg:flex-row items-center mt-2">
-                                        {% csrf_token %}
-                                        <label for="quantity" class="mr-2 mb-2 lg:mb-0">Update to:</label>
-                                        <input type="number" name="quantity" value="{{ cart_item.size_variant.quantity }}" min="1" max="{{ cart_item.size_variant.quantity }}" class="w-16 text-center border rounded" required>
-                                        <button type="submit" class="ml-2 lg:ml-2 mt-2 lg:mt-0 px-4 py-2 bg-yellow-500 text-white rounded-lg shadow hover:bg-yellow-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Update</button>
-                                    </form>
-                                {% else %}
-                                    <p class="text-red-600 font-bold">Item no longer available.</p>
-                                {% endif %}
-                            {% else %}
-                                {# Item is still in stock or quantity is acceptable #}
-                                <form action="{% url 'cart:update_quantity' cart_item.id %}" method="post" class="flex flex-col lg:flex-row items-center mt-2">
-                                    {% csrf_token %}
-                                    <label for="quantity" class="mr-2 mb-2 lg:mb-0">Quantity:</label>
-                                    <input type="number" name="quantity" value="{{ cart_item.quantity }}" min="1" max="{{ cart_item.size_variant.quantity }}" class="w-16 text-center border rounded" required>
-                                    <button type="submit" class="ml-2 lg:ml-2 mt-2 lg:mt-0 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition duration-200 ease-in-out transform hover:-translate-y-1">Update</button>
-                                </form>
-                            {% endif %}
-                            {# --- END STOCK CHECK AND QUANTITY UPDATE FORM --- #}
-
-                            <p class="text-gray-700 mt-2"><strong>Price:</strong> ${{ cart_item.item.price|floatformat:2 }}</p>
+                            <p class="mt-1 text-gray-700 text-sm">Price: ${{ cart_item.item.price|floatformat:2 }}</p>
+                            <p class="text-gray-800 font-medium text-sm">Total: ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
                         </div>
-                        <div class="text-center lg:text-right mt-4 lg:mt-0 flex flex-col items-center lg:items-end lg:space-x-4">
-                            <p class="text-lg font-semibold"><strong>Total:</strong> ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
-                            <form action="{% url 'cart:remove_from_cart' cart_item.id %}" method="post" class="mt-2 lg:mt-0">
+                    </div>
+
+                    <div class="flex justify-between items-center mt-1">
+                        {% if cart_item.quantity > cart_item.size_variant.quantity %}
+                            <p class="text-red-600 text-xs font-semibold">
+                                Only {{ cart_item.size_variant.quantity }} in stock
+                            </p>
+                        {% endif %}
+
+                        <div class="flex items-center gap-2">
+                            <form method="post" action="{% url 'cart:update_quantity' cart_item.id %}" class="flex items-center gap-1">
                                 {% csrf_token %}
-                                <button type="submit" class="flex items-center justify-center w-10 h-10 rounded-full bg-white text-black shadow transition duration-200 ease-in-out transform hover:-translate-y-1"> <i class="fas fa-trash-alt fa-lg hover:text-red-500"></i> </button>
+                                <input type="number" name="quantity" value="{{ cart_item.quantity }}"
+                                       min="1" max="{{ cart_item.size_variant.quantity }}"
+                                       class="w-12 text-center border rounded text-xs py-0.5">
+                                <button type="submit" class="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600">
+                                    Update
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'cart:remove_from_cart' cart_item.id %}">
+                                {% csrf_token %}
+                                <button class="text-red-500 hover:text-red-700 text-xs">
+                                    Remove
+                                </button>
                             </form>
                         </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="lg:col-span-1 flex justify-center lg:justify-end">
-                <div class="bg-white p-6 rounded-xl shadow-lg w-full">
-                    <h2 class="text-2xl font-semibold mb-4 text-center lg:text-left">Order Summary</h2>
-                    <p class="text-lg"><strong>Total Items:</strong> {{ cart_item_count }}</p>
-                    <p class="text-lg font-semibold"><strong>Total Price:</strong> ${{ total_price|floatformat:2 }}</p>
-                    {% if can_checkout %}
-                        <a href="{% url 'payment:checkout' %}" class="mt-4 inline-block px-6 py-3 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition duration-200 ease-in-out transform hover:-translate-y-1">
-                            Proceed to Checkout
-                        </a>
-                    {% else %}
-                        <p class="mt-4 text-red-600 font-semibold text-center">
-                            Cannot Checkout: Please adjust quantities or remove out-of-stock items.
-                        </p>
-                        <a href="#" class="mt-4 inline-block px-6 py-3 bg-gray-400 text-gray-700 rounded-lg shadow cursor-not-allowed opacity-70">
-                            Proceed to Checkout
-                        </a>
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
+            {% endfor %}
         </div>
+
+        <div class="bg-gray-100 p-4 mt-6 rounded-lg">
+            <h2 class="text-base font-semibold mb-2">Summary</h2>
+            <p class="text-sm mb-1">Items: {{ cart_item_count }}</p>
+            <p class="text-sm font-medium mb-3">Total: ${{ total_price|floatformat:2 }}</p>
+
+            {% if can_checkout %}
+                <a href="{% url 'payment:checkout' %}" class="block w-full bg-yellow-400 text-black text-center font-semibold py-2 rounded hover:bg-yellow-500 transition">
+                    Checkout
+                </a>
+            {% else %}
+                <p class="text-red-600 text-sm mb-2">Fix stock issues before checkout.</p>
+                <button class="w-full bg-gray-400 text-white py-2 rounded cursor-not-allowed opacity-70">Checkout</button>
+            {% endif %}
+        </div>
+
     {% else %}
-        <p class="text-lg text-center">Your cart is empty.</p>
+        <p class="text-center text-gray-500 mt-10">Your cart is empty.</p>
     {% endif %}
 </div>
 {% endblock %}
