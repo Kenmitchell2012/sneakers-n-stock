@@ -6,7 +6,7 @@
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6 text-center">
-        Your Notifications 
+        Your Notifications
         {% if unread_notifications_count > 0 %}
             <span class="text-xl text-red-500">({{ unread_notifications_count }} unread)</span>
         {% endif %}
@@ -25,7 +25,9 @@
                     <li class="py-3 px-2 rounded-lg {% if not notification.is_read %}bg-blue-50{% endif %}">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-sm font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">{{ notification.message }}</p>
+                                <p class="text-sm font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">
+                                    {{ notification.content }} {# <--- CHANGE THIS LINE! #}
+                                </p>
                                 <p class="text-xs text-gray-500 mt-1">
                                     {{ notification.created_at|date:"M d, Y H:i" }}
                                     {% if notification.order %}

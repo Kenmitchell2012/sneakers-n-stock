@@ -9,9 +9,9 @@ from django.contrib.auth.models import User
 from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, F # Import F for database expressions
-from django.db import models # For models.Count in conversation, if needed
-from django.db.models import Prefetch # Import Prefetch for nested prefetching
+from django.db.models import Sum, F
+from django.db import models
+from django.db.models import Prefetch
 
 import stripe
 import json
@@ -21,8 +21,8 @@ from conversation.models import Conversation
 from items.models import Items, SizeVariant, ItemImage
 from cart.models import Cart, CartItem
 from payment.models import Order, OrderItem, ShippingAddress
-from .forms import ShippingAddressForm, PaymentForm # Assuming these are in payment.forms
-from notifications.models import Notification
+from .forms import ShippingAddressForm, PaymentForm
+from notifications.models import Notification # Ensure this import is present
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def _create_stripe_checkout_session_internal(request, cart, shipping_info_cleane
     customer_email_for_stripe = request.user.email if request.user.is_authenticated and request.user.email else None
 
     if customer_email_for_stripe == '':
-        customer_email_for_stripe = None 
+        customer_email_for_stripe = None
 
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -231,7 +231,7 @@ def stripe_webhook(request):
                 # Prefer Stripe's collected shipping details if available and complete.
                 if stripe_shipping_details and stripe_shipping_details.get('address'):
                     address = stripe_shipping_details['address'] # Access as dict for safety
-                    
+
                     # Update name and email from Stripe's collected details if available
                     if stripe_shipping_details.get('name'):
                         shipping_full_name = stripe_shipping_details['name']
@@ -386,7 +386,7 @@ def admin_dashboard(request):
 
     # --- 3. Filter Orders for the List Display (bottom half) ---
     orders_for_list = Order.objects.all().order_by('-created_at') # Start with all orders
-    
+
     if status_filter == 'shipped':
         orders_for_list = orders_for_list.filter(status='shipped')
     elif status_filter == 'pending':
@@ -396,7 +396,7 @@ def admin_dashboard(request):
     elif status_filter == 'canceled': # Add if you plan to filter by canceled
         orders_for_list = orders_for_list.filter(status='canceled')
     # If status_filter is 'all' or an invalid value, it will show all orders by default (which is good)
-    
+
     context = {
         # Summary Metrics
         'total_orders_count': total_orders_count, # Renamed for clarity with _count suffix
@@ -427,34 +427,53 @@ def order_detail(request, order_id):
     order_items_queryset = OrderItem.objects.filter(order=order)
     items_total = sum(item.price * item.quantity for item in order_items_queryset)
 
-    items = [order_item.item for order_item in order_items_queryset] 
+    items = [order_item.item for order_item in order_items_queryset]
 
 
     if request.method == 'POST':
         # Retrieve the new status value and tracking number from the form submission
-        new_status = request.POST.get('shipping_status') 
+        new_status = request.POST.get('shipping_status')
         tracking_number_input = request.POST.get('tracking_number', '').strip() # Get tracking number, default to empty string
 
         try:
             with transaction.atomic(): # Ensure both updates are atomic
                 status_updated = False
                 tracking_updated = False
+                old_status = order.status # Store old status before potential update
 
                 # Update order status if provided and valid
                 valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
                 if new_status and new_status in valid_statuses:
                     # Only update if the status is actually changing
                     if order.status != new_status:
-                        order.status = new_status 
-                        order.save(update_fields=['status']) 
+                        order.status = new_status
+                        order.save(update_fields=['status'])
                         messages.success(request, f'Order status updated to {order.get_status_display()}.')
                         status_updated = True
+
+                        # --- Notification Logic for Status Change ---
+                        if new_status == 'shipped':
+                            Notification.objects.create(
+                                user=order.user,
+                                order=order, # Link the notification directly to the order
+                                notification_type='order_shipped',
+                                content=f'Your order #{order.id} has been shipped! Tracking Number: {order.tracking_number if order.tracking_number else "N/A"}.'
+                            )
+                            messages.info(request, "Customer has been notified that the order is shipped.")
+                        elif new_status == 'canceled':
+                            Notification.objects.create(
+                                user=order.user,
+                                order=order, # Link the notification directly to the order
+                                notification_type='order_canceled',
+                                content=f'Your order #{order.id} has been canceled. Please contact support for more details.'
+                            )
+                            messages.info(request, "Customer has been notified that the order is canceled.")
+                        # --- End Notification Logic ---
+
                 elif new_status: # If new_status was provided but invalid
-                    messages.error(request, 'Invalid status provided.') 
+                    messages.error(request, 'Invalid status provided.')
 
                 # Update tracking number if it's different from current
-                # Note: 'tracking_number' in request.POST checks if the field was present in the form,
-                # even if it was empty. This allows clearing the tracking number.
                 if 'tracking_number' in request.POST and order.tracking_number != tracking_number_input:
                     order.tracking_number = tracking_number_input if tracking_number_input else None # Save None if empty string
                     order.save(update_fields=['tracking_number'])
@@ -463,7 +482,19 @@ def order_detail(request, order_id):
                     else:
                         messages.info(request, 'Tracking number cleared.')
                     tracking_updated = True
-                
+
+                    # --- Notification Logic for Tracking Number Update (if status is already shipped) ---
+                    # This is optional, but useful if tracking number is added *after* initial "shipped" status
+                    if order.status == 'shipped' and status_updated is False: # Only if status wasn't just set to shipped
+                         Notification.objects.create(
+                            user=order.user,
+                            order=order, # Link the notification directly to the order
+                            notification_type='tracking_update',
+                            content=f'The tracking number for your order #{order.id} has been updated to: {order.tracking_number}.'
+                        )
+                         messages.info(request, "Customer has been notified about tracking number update.")
+                    # --- End Notification Logic ---
+
                 if not (status_updated or tracking_updated):
                     messages.info(request, 'No changes detected for update.')
 
@@ -477,8 +508,8 @@ def order_detail(request, order_id):
     # For GET requests, render the detail page
     context = {
         'order': order,
-        'order_items': order_items_queryset, 
-        'items': items, 
+        'order_items': order_items_queryset,
+        'items': items,
         'items_total': items_total,
     }
     return render(request, 'payment/order_detail.html', context)

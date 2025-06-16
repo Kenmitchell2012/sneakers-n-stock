@@ -7,6 +7,7 @@ from .forms import ConversationMessagesForm
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.db import models
+from notifications.models import Notification
 
 # Create your views here.
 
@@ -34,6 +35,11 @@ def new_conversation(request, item_pk):
     ).filter(
         num_members=2 # Ensure only conversations with exactly two members (buyer and seller)
     )
+
+    # notification_count = 0 # Initialize notification count, if you have a notifications app
+    # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
 
     if existing_conversations.exists():
         conversation = existing_conversations.first()
@@ -66,7 +72,8 @@ def new_conversation(request, item_pk):
     return render(request, 'conversation/new.html', {
         'form': form, 
         'item': item, # <--- Pass the item object to the template
-        'cart_item_count': cart_item_count # Pass cart item count
+        'cart_item_count': cart_item_count, # Pass cart item count
+        'unread_notifications_count': unread_notifications_count, # For navbar
     })
 
 
@@ -78,10 +85,15 @@ def inbox(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
     cart_items = cart.items.all()
     cart_item_count = sum(item.quantity for item in cart_items)
+     # notification_count = 0 # Initialize notification count, if you have a notifications app
+    # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
     return render(request, 'conversation/inbox.html', {
         'conversations': conversations, 
         'conversation_count': conversation_count,
         'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count, # For navbar
         })
 
 
@@ -96,6 +108,11 @@ def detail(request, pk):
     cart_items = cart.items.all()
     cart_item_count = sum(item.quantity for item in cart_items)
 
+     # notification_count = 0 # Initialize notification count, if you have a notifications app
+    # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+
     if request.method == 'POST':
         form = ConversationMessagesForm(request.POST)
         if form.is_valid():
@@ -107,7 +124,7 @@ def detail(request, pk):
     else:
         form = ConversationMessagesForm()
 
-    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form, 'conversation_count': conversation_count, 'cart_item_count': cart_item_count})
+    return render(request, 'conversation/detail.html', {'conversation': conversation, 'form': form, 'conversation_count': conversation_count, 'cart_item_count': cart_item_count, 'unread_notifications_count': unread_notifications_count,}) # Pass the conversation object to the template
 
 
 

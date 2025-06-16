@@ -1,14 +1,10 @@
 from django.contrib import admin
-
-# Register your models here.
-
 from .models import Notification
-@admin.register(Notification)
+
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'order', 'message', 'is_read', 'created_at')
-    list_filter = ('is_read', 'created_at', 'user')
-    search_fields = ('message', 'user__username', 'order__id')
-    readonly_fields = ('created_at',)
-    
-    def has_add_permission(self, request):
-        return False
+    # Change 'message' to 'content' here
+    list_display = ('user', 'notification_type', 'content', 'is_read', 'created_at')
+    list_filter = ('notification_type', 'is_read', 'created_at')
+    search_fields = ('user__username', 'content', 'order__id') # Also update search_fields if it used 'message'
+
+admin.site.register(Notification, NotificationAdmin)

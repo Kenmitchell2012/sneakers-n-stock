@@ -1,10 +1,10 @@
-<div class="w-full relative z-50">
-    <nav class="bg-white py-4 px-6 md:px-12 flex justify-between items-center shadow-md border-b border-gray-100">
-        <a href="{% url 'core:index' %}" class="text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors duration-200">
+<div class="w-full relative z-50"> 
+    <nav class="bg-white py-4 px-6 md:px-12 flex justify-between items-center shadow-md border-b border-gray-100"> 
+        <a href="{% url 'core:index' %}" class="text-xl md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors duration-200"> 
             <i class="fa-solid fa-shoe-prints mr-2"></i> SneakerzInStock
         </a>
         
-        <div class="flex items-center md:hidden space-x-4"> {# Container for mobile actions: cart, inbox, notifications, and hamburger #}
+        <div class="flex items-center md:hidden space-x-2"> {# Container for mobile actions: cart, inbox, notifications, and hamburger #}
             {% if request.user.is_authenticated %}
                 <a href="{% url 'notifications:list' %}" class="relative">
                     <i class="fa-solid fa-bell fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
@@ -53,7 +53,7 @@
                             <a href="{% url 'payment:admin_dashboard' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Admin Dashboard</a>
                             <a href="{% url 'payment:shipped_dashboard' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Shipped Dashboard</a>
                             <a href="{% url 'payment:not_shipped_dashboard' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Not Shipped Dashboard</a>
-                            <div class="my-1 border-t border-gray-200"></div> 
+                            <div class="my-1 border-t border-gray-200"></div> {# Divider #}
                         {% endif %}
                         
                         <a href="{% url 'payment:user_orders' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">My Orders</a>
@@ -61,30 +61,30 @@
                         <a href="{% url 'core:user_profile' request.user.username %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">My Profile</a>
                         <a href="{% url 'core:update_user' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Update Account</a>
                         <a href="{% url 'core:update_password' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-teal-500 hover:text-white transition-colors duration-150">Update Password</a>
-                        <div class="my-1 border-t border-gray-200"></div> 
+                        <div class="my-1 border-t border-gray-200"></div> {# Divider #}
                         
                         <a href="{% url 'core:logout_user' %}" class="block px-4 py-2 text-gray-800 text-sm hover:bg-red-500 hover:text-white transition-colors duration-150">Logout</a>
                     </div>
                 </div>
         
-                <a href="{% url 'notifications:list' %}" class="relative">
+                <a href="{% url 'notifications:list' %}" class="relative"> {# Removed hidden md:block here #}
                     <i class="fa-solid fa-bell fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
                     {% if unread_notifications_count > 0 %}
                         <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ unread_notifications_count }}</span>
                     {% endif %}
                 </a>
 
-                <a href="{% url 'conversations:inbox' %}" class="relative"> 
-                    <i class="fa-solid fa-envelope fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i> 
+                <a href="{% url 'conversations:inbox' %}" class="relative"> {# Removed hidden md:block here #}
+                    <i class="fa-solid fa-envelope fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
                     {% if inbox_unread_count > 0 %}
                         <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full">{{ inbox_unread_count }}</span>
                     {% endif %}
                 </a>
 
-                <a href="{% url 'cart:view_cart' %}" class="relative"> 
-                    <i class="fa-solid fa-cart-shopping fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i> 
+                <a href="{% url 'cart:view_cart' %}" class="relative"> {# Removed hidden md:block here #}
+                    <i class="fa-solid fa-cart-shopping fa-lg text-gray-700 hover:text-teal-600 transition-colors duration-200"></i>
                     {% if cart_item_count > 0 %}
-                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ cart_item_count }}</span> 
+                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ cart_item_count }}</span>
                     {% endif %}
                 </a>
             {% else %}
@@ -106,21 +106,15 @@
     
     {% if request.user.is_authenticated %}
         <div class="my-2 border-t border-gray-200"></div>
-        <a href="{% url 'notifications:list' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Notifications
-            {% if unread_notifications_count > 0 %}
-                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">{{ unread_notifications_count }}</span>
-            {% endif %}
-        </a>
+        {# Removed redundant text links for icons already in top mobile bar #}
+        {# Removed Notifications link #}
+        {# Removed Inbox link #}
+        {# Removed Cart link #}
         <a href="{% url 'payment:user_orders' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Orders</a>
         <a href="{% url 'dashboard:index' request.user.username %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Dashboard</a>
         <a href="{% url 'core:user_profile' request.user.username %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">My Profile</a>
         <a href="{% url 'core:update_user' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Update Account</a>
         <a href="{% url 'core:update_password' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Update Password</a>
-        <a href="{% url 'conversations:inbox' %}" class="block text-lg font-semibold text-gray-700 hover:text-teal-600 transition-colors duration-200">Inbox
-            {% if inbox_unread_count > 0 %}
-                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full">{{ inbox_unread_count }}</span>
-            {% endif %}
-        </a>
         <div class="my-2 border-t border-gray-200"></div>
         <a href="{% url 'core:logout_user' %}" class="block text-lg font-semibold text-gray-700 hover:text-red-500 transition-colors duration-200">Logout</a>
     {% else %}
