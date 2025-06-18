@@ -29,25 +29,23 @@ def items(request):
     if query:
         # Use Q objects to build complex OR queries
         items = items.filter(
-            Q(name__icontains=query) | 
-            Q(description__icontains=query) | 
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
             Q(price__icontains=query) # Note: price__icontains might behave unexpectedly for non-numeric queries
         )
 
     # --- NEW LOGIC: Initialize user-specific data to default values for guests ---
     conversation_count = 0
     cart_item_count = 0
-
-    # notification_count = 0 # Initialize notification count, if you have a notifications app
-    # Get unread notification count for navbar (even for this page)
-    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
-
+    unread_notifications_count = 0 # <--- FIX: Initialize here for unauthenticated users
 
     # Only fetch user-specific data if the user is authenticated
     if request.user.is_authenticated:
         # Handle conversations
         conversations = Conversation.objects.filter(members__in=[request.user.id])
         conversation_count = conversations.count()
+        # Get unread notification count for navbar
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
         # Cart quantity info
         cart, created = Cart.objects.get_or_create(user=request.user)
@@ -63,7 +61,7 @@ def items(request):
         'conversation_count': conversation_count, # Will be 0 for guests, actual count for logged-in
         'cart_item_count': cart_item_count,       # Will be 0 for guests, actual count for logged-in
         'unread_notifications_count': unread_notifications_count, # For navbar
-        })
+    })
 
 # --- Live Search API Endpoint ---
 def live_search_items(request):

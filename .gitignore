@@ -33,3 +33,4 @@ Thumbs.db
 
 # Environment variables (if you use .env for local settings)
 .env
+*.sqlite3
