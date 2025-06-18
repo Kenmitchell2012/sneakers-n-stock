@@ -31,6 +31,55 @@ SECRET_KEY = 'django-insecure--skz(7t7z0!e(+8ruag%o1u3r9)(ufoyepo%eqs7erapklfe&^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO', # <--- Set this to INFO or DEBUG
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple', # Or 'verbose' if you want more detail
+        },
+        # You can add file handlers here for production if needed
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO', # <--- Set Django's default logger level
+            'propagate': False, # Avoids sending logs to root logger multiple times
+        },
+        'payment': { # <--- Add a logger for your 'payment' app
+            'handlers': ['console'],
+            'level': 'INFO', # <--- Set your payment app's logger level
+            'propagate': False,
+        },
+        # If you have other apps (e.g., 'cart', 'notifications'), you can add them too
+        'notifications': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        '': { # This is the root logger, catches everything if not propagated
+            'handlers': ['console'],
+            'level': 'WARNING', # Default level for unhandled logs
+        }
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO', # Set root logger level
+    },
+}
+
 ALLOWED_HOSTS = []
 
 LOGIN_URL = '/login/'

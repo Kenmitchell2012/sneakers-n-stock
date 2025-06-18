@@ -101,6 +101,11 @@ def live_search_items(request):
 
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
+
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
     
     # Initialize variables for authenticated-only data
     conversation_count = 0
@@ -130,6 +135,7 @@ def detail(request, pk):
     
     # If the user is not authenticated, the form will still be rendered, but it won't be used for adding to cart
     context = {
+        'cart_item_count': cart_item_count, # For navbar
         'item': item,
         'related_items': related_items,
         'conversation_count': conversation_count,

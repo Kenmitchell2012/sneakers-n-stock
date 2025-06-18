@@ -147,6 +147,8 @@ def checkout(request):
                 return response_redirect
             elif checkout_session:
                 request.session['stripe_checkout_session_id'] = checkout_session.id
+                # debug logging to confirm session ID is stored
+                logger.info(f"DEBUG: Stored Stripe Checkout Session ID in session: {request.session.get('stripe_checkout_session_id')}")
                 return redirect(checkout_session.url, code=303)
             else:
                 messages.error(request, "Failed to initiate payment. Please try again.")
@@ -199,6 +201,7 @@ def stripe_webhook(request):
         logger.error("'event' object is None after construction. Payload might be malformed or unhandled.")
         return HttpResponse(status=400)
 
+    # Handle the 'checkout.session.completed' event
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
 
@@ -206,39 +209,63 @@ def stripe_webhook(request):
         cart_id = session.metadata.get('cart_id')
         amount_total = session['amount_total'] / 100
 
-        logger.info(f"Checkout Session Completed event received for user {user_id}, cart {cart_id}, total {amount_total}")
+        logger.info(f"Checkout Session Completed event received for user {user_id}, cart {cart_id}, total {amount_total}, Payment Intent ID: {session.payment_intent}")
 
         try:
             with transaction.atomic():
-                user = User.objects.get(id=user_id)
-                cart = Cart.objects.get(id=cart_id)
-                cart_items = cart.items.all()
-
+                # 1. Prevent Duplicate Orders: Check if an order with this payment_intent_id already exists.
                 if Order.objects.filter(payment_intent_id=session.payment_intent).exists():
                     logger.info(f"Order for payment_intent_id {session.payment_intent} already exists. Skipping duplicate fulfillment.")
                     return HttpResponse(status=200)
 
+                # 2. Get User (Required)
+                try:
+                    user = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    logger.error(f"User with ID {user_id} not found during webhook processing for session {session.id}. Cannot fulfill order.")
+                    return HttpResponse(status=400) # User must exist for order to be valid
+
+                # 3. Get Cart and its items (Robustly)
+                cart = None
+                cart_items = []
+                if cart_id: # Ensure cart_id exists from metadata
+                    try:
+                        cart = Cart.objects.get(id=cart_id)
+                        cart_items = cart.items.all()
+                    except Cart.DoesNotExist:
+                        logger.warning(f"Cart with ID {cart_id} for user {user_id} not found during webhook processing. "
+                                       f"This might happen if the cart was already cleared/deleted. Proceeding without cart items for order details.")
+                        # If cart is gone, we can't use cart_items to populate order items.
+                        # This scenario is problematic for accurate order item creation.
+                        # Ideally, cart items should be fetched from Stripe's line_items if possible,
+                        # but your current model relies on the cart_items.
+
+                if not cart_items.exists():
+                     logger.warning(f"Cart {cart_id} for user {user_id} is empty or not found during webhook processing. "
+                                    f"Cannot create OrderItems without cart contents. Assuming already processed or invalid state for this webhook.")
+                     # If the cart is empty or not found and thus no cart_items, and no order exists yet
+                     # (checked by payment_intent_id earlier), this indicates a problem.
+                     # We return 200 to acknowledge the webhook, but the order won't be fully created.
+                     # If you need to create order items even if the cart is gone, you'd parse Stripe's session.line_items.
+                     # For now, we're assuming cart_items is the source.
+                     return HttpResponse(status=200)
+
+
+                # 4. Extract Shipping Details (Robustly from Stripe data or metadata)
                 shipping_full_name = session.metadata.get('shipping_full_name', 'N/A')
                 shipping_email = session.metadata.get('shipping_email', session.customer_details.get('email', 'N/A'))
                 shipping_phone_number = session.metadata.get('shipping_phone_number', '')
 
                 shipping_address_parts = []
-
-                # --- START: MORE ROBUST SHIPPING DETAILS EXTRACTION ---
-                # Safely get shipping_details, which might be None or not present at all.
                 stripe_shipping_details = session.get('shipping_details')
 
-                # Prefer Stripe's collected shipping details if available and complete.
                 if stripe_shipping_details and stripe_shipping_details.get('address'):
-                    address = stripe_shipping_details['address'] # Access as dict for safety
-
-                    # Update name and email from Stripe's collected details if available
+                    address = stripe_shipping_details['address']
                     if stripe_shipping_details.get('name'):
                         shipping_full_name = stripe_shipping_details['name']
                     if session.customer_details and session.customer_details.get('email'):
                         shipping_email = session.customer_details.get('email')
 
-                    # Build address parts from Stripe's shipping_details
                     if address.get('line1'): shipping_address_parts.append(address['line1'])
                     if address.get('line2'): shipping_address_parts.append(address['line2'])
                     if address.get('city'): shipping_address_parts.append(address['city'])
@@ -246,7 +273,6 @@ def stripe_webhook(request):
                     if address.get('postal_code'): shipping_address_parts.append(address['postal_code'])
                     if address.get('country'): shipping_address_parts.append(address['country'])
                 else:
-                    # Fallback to metadata if Stripe didn't collect sufficient shipping address
                     if session.metadata.get('shipping_address_line1'): shipping_address_parts.append(session.metadata.get('shipping_address_line1'))
                     if session.metadata.get('shipping_address_line2'): shipping_address_parts.append(session.metadata.get('shipping_address_line2'))
                     if session.metadata.get('shipping_city'): shipping_address_parts.append(session.metadata.get('shipping_city'))
@@ -255,8 +281,9 @@ def stripe_webhook(request):
                     if session.metadata.get('shipping_country'): shipping_address_parts.append(session.metadata.get('shipping_country'))
 
                 shipping_address_str = "\n".join(filter(None, shipping_address_parts)) or "No shipping address provided."
-                # --- END: MORE ROBUST SHIPPING DETAILS EXTRACTION ---
 
+
+                # 5. Create the Order
                 create_order = Order(
                     user=user,
                     full_name=shipping_full_name,
@@ -268,8 +295,9 @@ def stripe_webhook(request):
                     payment_intent_id=session.payment_intent,
                     stripe_checkout_session_id=session.id
                 )
-                create_order.save()
+                create_order.save() # <-- If you have a post_save signal here, it will fire
 
+                # 6. Create Order Items and Update Stock
                 for cart_item in cart_items:
                     size_variant = cart_item.size_variant
                     item_quantity = cart_item.quantity
@@ -288,10 +316,14 @@ def stripe_webhook(request):
                         )
                         order_item.save()
                     else:
-                        logger.error(f"Overselling detected! Item {cart_item.item.name} (Size {size_variant.size}) out of stock during webhook fulfillment. Order {create_order.id}, Cart {cart.id}")
+                        logger.error(f"Overselling detected! Item {cart_item.item.name} (Size {size_variant.size}) out of stock during webhook fulfillment for Order {create_order.id}, Cart {cart.id}")
+                        # This scenario should ideally be caught before checkout, but if it happens,
+                        # you might need to implement a refund or manual intervention here.
                         pass
 
-                cart.items.all().delete()
+                # 7. Clear the User's Cart Items (but not the cart itself)
+                if cart: # Only if cart object was successfully retrieved
+                    cart.items.all().delete()
 
                 logger.info(f"Order {create_order.id} for user {user.username} fulfilled successfully via webhook.")
                 return HttpResponse(status=200)
@@ -300,6 +332,7 @@ def stripe_webhook(request):
             logger.error(f"Error during webhook order processing for user {user_id}, cart {cart_id}: {e}", exc_info=True)
             return HttpResponse(status=500)
 
+    # Log and respond to unhandled event types
     else:
         logger.warning(f"Unhandled webhook event type: {event['type']}")
         return HttpResponse(status=200)
@@ -307,19 +340,79 @@ def stripe_webhook(request):
 # --- User-Facing Payment Status Views ---
 
 def payment_success(request):
+    logger.info(f"DEBUG: payment_success hit. Session ID received: {request.session.get('stripe_checkout_session_id')}")
     """
     Renders the success page after a payment is confirmed by Stripe.
-    Order fulfillment is handled by the webhook, not this view.
+    Attempts to retrieve and display details of the most recent successful order.
     """
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+    order = None
+    order_items = None
+    items_total = 0
+
+    # Try to retrieve the Stripe Checkout Session ID from the session
+    stripe_checkout_session_id = request.session.get('stripe_checkout_session_id')
+
+    if request.user.is_authenticated and stripe_checkout_session_id:
+        try:
+            logger.info(f"DEBUG: Attempting to find Order for user {request.user.id} with session ID {stripe_checkout_session_id}")
+            # Find the order associated with this checkout session ID
+            order = Order.objects.select_related('user').prefetch_related('order_items__item').get(
+                user=request.user,
+                stripe_checkout_session_id=stripe_checkout_session_id
+            )
+            # ADD THIS LINE HERE:
+            logger.info(f"DEBUG: Order found! Order ID: {order.id}, Payment Intent ID: {order.payment_intent_id}")
+
+            order_items = order.order_items.all()
+            items_total = sum(item.price * item.quantity for item in order_items)
+
+            # Optional: Clear the session variable after use
+            if 'stripe_checkout_session_id' in request.session:
+                logger.info(f"DEBUG: Deleting stripe_checkout_session_id from session.")
+                del request.session['stripe_checkout_session_id']
+
+        except Order.DoesNotExist:
+            messages.warning(request, "Could not find details for your recent order. Please check your order history.")
+            logger.warning(f"DEBUG: Payment success page: Order not found for user {request.user.id} with session ID {stripe_checkout_session_id}. Order.DoesNotExist.")
+        except Exception as e:
+            messages.error(request, "An error occurred while fetching your order details.")
+            logger.error(f"DEBUG: Payment success page: Error fetching order for user {request.user.id}, session {stripe_checkout_session_id}: {e}", exc_info=True)
+    elif not request.user.is_authenticated:
+        messages.info(request, "Please log in to view your order history and details.")
+        logger.info(f"DEBUG: User not authenticated on payment_success page.")
+
+
+    # Always show a success message
     messages.success(request, "Payment successful! Your order has been placed.")
-    return render(request, 'payment/success.html')
+
+    context = {
+        'unread_notifications_count': unread_notifications_count,
+        'order': order,
+        'order_items': order_items,
+        'items_total': items_total,
+    }
+    return render(request, 'payment/success.html', context)
+
 
 def payment_cancel(request):
     """
-    Renders the cancel page if a payment is not completed or is canceled on Stripe.
+    Renders the cancellation page after a payment is canceled by the user.
     """
-    messages.error(request, "Payment canceled or failed. Please try again.")
-    return render(request, 'payment/cancel.html')
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+    # Always show a cancellation message
+    messages.info(request, "Payment canceled. Your order was not processed.")
+
+    context = {
+        'unread_notifications_count': unread_notifications_count,
+    }
+    return render(request, 'payment/cancel.html', context)
 
 # --- User and Admin Order Dashboard Views ---
 
