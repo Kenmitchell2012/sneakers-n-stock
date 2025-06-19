@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% load math_filters %}
+{% load math_filters %} {# Make sure your custom_filters are loaded if you are using split_lines #}
 
 {% block title %}Payment Success | SneakerzInStock{% endblock %}
 
@@ -36,13 +36,15 @@
                 {% for item in order_items %}
                     <li class="py-3 flex items-center">
                         {% if item.item.images.first.image %}
-                            <img src="{{ item.item.images.first.image.url }}" alt="{{ item.item.name }}" class="w-16 h-16 object-cover rounded mr-4">
+                            <img src="{{ item.item.images.first.image.url }}" alt="{{ item.item.name }}" class="w-24 h-24 object-contain rounded mr-4"> {# Adjusted w- and h- classes #}
                         {% endif %}
                         <div class="flex-grow">
                             <p class="font-medium text-gray-900">{{ item.item.name }} (Size: {{ item.size_variant.size }})</p>
-                            <p class="text-sm text-gray-600">Quantity: {{ item.quantity }} x ${{ item.price|floatformat:2 }}</p>
+                            <p class="text-sm text-gray-600">
+                                Quantity: {{ item.quantity }} x ${{ item.price|floatformat:2 }} {# Individual item price #}
+                            </p>
                         </div>
-                        <span class="font-semibold text-gray-900">${{ item.get_total_price|floatformat:2 }}</span>
+                        <span class="font-semibold text-gray-900">${{ item.get_total_price|floatformat:2 }}</span> {# Total price for this specific order item #}
                     </li>
                 {% endfor %}
             </ul>

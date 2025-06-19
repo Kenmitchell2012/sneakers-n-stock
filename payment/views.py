@@ -345,6 +345,8 @@ def payment_success(request):
     Renders the success page after a payment is confirmed by Stripe.
     Attempts to retrieve and display details of the most recent successful order.
     """
+
+    # Get unread notification count for navbar
     unread_notifications_count = 0
     if request.user.is_authenticated:
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
@@ -369,6 +371,15 @@ def payment_success(request):
 
             order_items = order.order_items.all()
             items_total = sum(item.price * item.quantity for item in order_items)
+
+            # --- DEBUG LOGS ---
+            logger.info(f"DEBUG: Found Order ID: {order.id}, Total Paid: {order.amount_paid}")
+            if order_items:
+                for idx, oi in enumerate(order_items):
+                    logger.info(f"DEBUG: OrderItem {idx+1}: Item Name='{oi.item.name}', Quantity={oi.quantity}, Price={oi.price}, Calculated Total={oi.get_total_price()}")
+            else:
+                logger.warning(f"DEBUG: No order_items found for Order ID: {order.id}")
+            # --- END DEBUG LOGS ---
 
             # Optional: Clear the session variable after use
             if 'stripe_checkout_session_id' in request.session:
@@ -421,6 +432,16 @@ def user_orders(request):
     """
     Displays a list of all orders for the logged-in user.
     """
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
+
+    # Get unread notification count for navbar (even for this page)
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
     conversations = Conversation.objects.filter(members__in=[request.user.id])
     conversation_count = conversations.count()
     orders = Order.objects.filter(user=request.user).order_by('-created_at').annotate(
@@ -430,8 +451,10 @@ def user_orders(request):
     )
 
     context = {
+        'cart_item_count': cart_item_count,  # For navbar
         'orders': orders,
         'conversation_count': conversation_count,  # Pass the count to the template
+        'unread_notifications_count': unread_notifications_count,  # For navbar
     }
     return render(request, 'payment/user_orders.html', context)
 
@@ -440,14 +463,25 @@ def user_order_detail(request, order_id):
     """
     Displays the detailed information for a specific order belonging to the logged-in user.
     """
+    # Get the cart item count for the authenticated user
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all()
+    cart_item_count = sum(item.quantity for item in cart_items)
+
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
     order = get_object_or_404(Order, id=order_id, user=request.user)
     order_items_queryset = OrderItem.objects.filter(order=order)
     items_total = sum(item.price * item.quantity for item in order_items_queryset)
 
     context = {
+        'cart_item_count': cart_item_count,  # For navbar
         'order': order,
         'order_items': order_items_queryset,
         'items_total': items_total,
+        'unread_notifications_count': unread_notifications_count,  # For navbar
     }
     return render(request, 'payment/user_order_detail.html', context)
 

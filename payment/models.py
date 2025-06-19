@@ -94,9 +94,15 @@ class OrderItem(models.Model):
     quantity = models.PositiveBigIntegerField(default=1)
     price = models.DecimalField(max_digits=8, decimal_places=2)
 
+    def get_total_price(self):
+        return self.quantity * self.price
+
     def __str__(self):
         total = self.quantity * self.price
         return f'{self.quantity} × {self.item} @ ${self.price:.2f} each = ${total:.2f} (Order #{self.order.id})'
+    
+    class Meta:
+        ordering = ['-pk']
     
 @receiver(post_save, sender=Order)
 def set_shipped_date_on_status_change(sender, instance, created, **kwargs):
