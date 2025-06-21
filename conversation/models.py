@@ -12,6 +12,11 @@ class Conversation(models.Model):
     class Meta:
         ordering = ('updated_at',)
 
+    def __str__(self):
+        # conversation about item: {self.item.name} with members: {', '.join([member.username for member in self.members.all()])}"
+        return f"Conversation about {self.item.name} with members: {', '.join([member.username for member in self.members.all()])}"
+    
+
 class ConversationMessages(models.Model):
     conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
     content = models.TextField()

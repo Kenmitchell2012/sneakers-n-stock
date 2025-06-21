@@ -4,19 +4,34 @@
 
 {% block content %}
 
-    <div class="max-w-5xl mx-auto px-6 py-8"> {# Increased max-width for better message display #}
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-8">
             Conversation about <span class="text-teal-600">{{ conversation.item.name }}</span>
         </h1>
 
-        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8"> {# Added container for messages #}
-            <div class="space-y-6 max-h-96 overflow-y-auto pr-2"> {# Max height and overflow for scrollable messages #}
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+            <div class="space-y-6 max-h-96 overflow-y-auto pr-2">
                 {% for message in conversation.messages.all %}
-                    <div id="message_{{ message.id }}" class="flex {% if message.created_by == request.user %}justify-end{% else %}justify-start{% endif %}">
-                        <div class="p-4 rounded-lg max-w-lg shadow-sm text-sm break-words {% if message.created_by == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-100 text-gray-800 mr-auto{% endif %}"> {# Styled message bubbles #}
-                            <p class="mb-1 text-xs opacity-80">
-                                <strong>{{ message.created_by.username }}</strong> @ {{ message.created_at|date:"M d, Y H:i" }} {# Formatted date #}
-                            </p>
+                    {# Outer container now uses flex-col to stack info and bubble, and aligns them #}
+                    <div id="message_{{ message.id }}"
+                         class="flex flex-col mb-2 {% if message.created_by == request.user %}items-end{% else %}items-start{% endif %}">
+                        {# Info about sender and timestamp, positioned above the bubble #}
+                        <div class="text-xs text-gray-500 mb-1 px-1"> {# px-1 for slight alignment with bubble padding #}
+                            {% if message.created_by == request.user %}
+                                <span class="font-semibold">You</span>
+                            {% else %}
+                                <span class="font-semibold">{{ message.created_by.username }}</span>
+                            {% endif %}
+                            <span class="ml-1">{{ message.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        {# The actual message bubble #}
+                        <div class="p-3 rounded-lg text-sm break-words shadow-sm
+                                    max-w-[75%] sm:max-w-[70%] md:max-w-lg
+                                    {% if message.created_by == request.user %}
+                                        bg-blue-500 text-white
+                                    {% else %}
+                                        bg-gray-200 text-gray-800
+                                    {% endif %}">
                             <p class="text-base">{{ message.content }}</p>
                         </div>
                     </div>
@@ -25,11 +40,12 @@
         </div>
 
         <div class="max-w-5xl mx-auto mt-8">
-            <form method="post" action="{% url 'conversations:detail' conversation.id %}" class="flex items-center space-x-4 p-4 bg-white rounded-xl shadow-lg border border-gray-200"> {# Styled form container #}
+            <form method="post" action="{% url 'conversations:detail' conversation.id %}"
+                  class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 p-4 bg-white rounded-xl shadow-lg border border-gray-200">
                 {% csrf_token %}
-                <textarea name="content" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800" placeholder="Type your message here..." rows="3"></textarea> {# Styled textarea #}
-                
-                <div class="flex flex-col space-y-2"> {# Buttons container #}
+                <textarea name="content" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800" placeholder="Type your message here..." rows="3"></textarea>
+
+                <div class="flex flex-col space-y-2">
                     <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:-translate-y-1">
                         Send
                     </button>
@@ -43,9 +59,9 @@
         <script>
             // Scroll to the last message after the page loads
             document.addEventListener('DOMContentLoaded', function() {
-                var messagesContainer = document.querySelector('.max-h-96'); // Select the scrollable message container
+                var messagesContainer = document.querySelector('.max-h-96');
                 if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to the bottom
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
             });
         </script>

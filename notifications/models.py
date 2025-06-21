@@ -1,12 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 from payment.models import Order
+from conversation.models import Conversation
 
 # Create your models here.
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
 
     # New field: Type of notification (e.g., 'order_shipped', 'order_canceled')
     NOTIFICATION_TYPES = (
@@ -14,6 +16,8 @@ class Notification(models.Model):
         ('order_canceled', 'Order Canceled'),
         ('tracking_update', 'Tracking Number Updated'), # For when tracking is added/changed
         ('general', 'General Notification'), # For other future notifications
+        ('order_placed', 'Order Placed'), # For new orders
+        ('new_message', 'New Message'), # For new messages in conversations
         # Add more types as needed
     )
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default='general')
@@ -36,10 +40,12 @@ class Notification(models.Model):
         self.is_read = True
         self.save()
 
-    # Optional: Add a method to get the URL for the notification
     def get_absolute_url(self):
-        if self.notification_type in ['order_shipped', 'order_canceled', 'tracking_update'] and self.order:
-            # Assuming you have a URL pattern named 'user_order_detail' that takes order_id
-            from django.urls import reverse
+        from django.urls import reverse # Import here to avoid circular imports
+
+        if self.notification_type in ['order_shipped', 'order_canceled', 'tracking_update', 'order_placed', 'order_delivered', 'order_status_update'] and self.order:
             return reverse('payment:user_order_detail', args=[self.order.id])
-        return '#' # Default fallback
+        elif self.notification_type == 'new_message' and self.conversation: # NEW URL LOGIC
+            return reverse('conversations:detail', args=[self.conversation.id])
+        return '#'
+

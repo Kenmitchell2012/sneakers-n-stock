@@ -10,41 +10,51 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <title>{% block title %}{% endblock %} | SneakerzInStock</title>
+    {# Add a style block for a custom property that JavaScript can update for exact spacing #}
+    <style>
+        :root {
+            --navbar-height: 0px; /* Default, will be updated by JS */
+        }
+        .main-content-area {
+            padding-top: var(--navbar-height); /* Use the JS-calculated height */
+        }
+    </style>
 </head>
-<body class="flex flex-col min-h-screen"> {# <-- Body needs flex container classes #}
+<body class="flex flex-col min-h-screen">
 
     {% include 'core/navbar.html' %}
-    
-    {% if messages %}
-        <div class="my-4">
-            {% for message in messages %}
-                <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md relative" role="alert">
-                    <div class="flex justify-between items-center">
-                        <div class="mx-auto">
-                            <p class="text-md text-center">{{ message }}</p>
-                        </div>
-                        <button class="text-teal-500 focus:outline-none absolute top-0 right-0 mt-2 mr-2" onclick="this.parentElement.parentElement.style.display='none';">
-                            <svg class="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <title>Close</title>
-                                <path d="M14.348 14.849a1 1 0 010 1.414l-.02.02a1 1 0 01-1.414 0L10 12.414l-2.914 2.914a1 1 0 01-1.414-1.414L8.586 10 5.672 7.086a1 1 0 011.414-1.414L10 8.586l2.914-2.914a1 1 0 011.414 1.414L11.414 10l2.934 2.934z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
 
-    {# <-- This div now makes the content grow and push the footer down #}
-    <div class="flex-grow"> 
+    {# This div wraps both messages and the main content #}
+    {# The padding-top will be dynamically set by JS #}
+    <div class="flex-grow main-content-area">
+        {% if messages %}
+            <div class="my-4 px-6"> {# Add some horizontal padding for messages #}
+                {% for message in messages %}
+                    <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md relative mb-2" role="alert"> {# Added mb-2 for spacing #}
+                        <div class="flex justify-between items-center">
+                            <div class="mx-auto">
+                                <p class="text-md text-center">{{ message }}</p>
+                            </div>
+                            <button class="text-teal-500 focus:outline-none absolute top-0 right-0 mt-2 mr-2" onclick="this.parentElement.parentElement.style.display='none';">
+                                <svg class="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <title>Close</title>
+                                    <path d="M14.348 14.849a1 1 0 010 1.414l-.02.02a1 1 0 01-1.414 0L10 12.414l-2.914 2.914a1 1 0 01-1.414-1.414L8.586 10 5.672 7.086a1 1 0 011.414-1.414L10 8.586l2.914-2.914a1 1 0 011.414 1.414L11.414 10l2.934 2.934z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="px-6 py-6">
             {% block content %}
-            
+
             {% endblock %}
         </div>
     </div>
 
-    <footer class="bg-gray-800 text-gray-300 py-12 px-6 lg:px-12 mt-auto"> 
+    <footer class="bg-gray-800 text-gray-300 py-12 px-6 lg:px-12 mt-auto">
         <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="md:col-span-1">
                 <h3 class="text-xl font-bold text-white mb-4">About SneakerzInStock</h3>
@@ -52,7 +62,7 @@
                     SneakerzInStock is your one-stop shop for the latest and greatest in sneaker fashion. We provide a comprehensive selection of shoes for all tastes and styles. Our mission is to keep you updated with the hottest trends and ensure your feet stay stylish and comfortable.
                 </p>
             </div>
-            
+
             <div class="md:col-span-1">
                 <h3 class="text-xl font-bold text-white mb-4">Quick Links</h3>
                 <ul class="space-y-2 text-sm">
@@ -102,6 +112,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             const cartModal = document.getElementById('cartModal');
             const modalContent = document.getElementById('modalContent');
+            const mainNavbar = document.getElementById('main-navbar'); // Get the main navbar element
+            const mainContentArea = document.querySelector('.main-content-area'); // Get the main content area
+
+            // Set the initial padding-top based on navbar height
+            const setContentPadding = () => {
+                if (mainNavbar && mainContentArea) {
+                    const navbarHeight = mainNavbar.offsetHeight;
+                    document.documentElement.style.setProperty('--navbar-height', `${navbarHeight}px`);
+                }
+            };
+
+            // Set padding on initial load
+            setContentPadding();
+            // Recalculate padding if window resizes (in case navbar height changes due to responsive design)
+            window.addEventListener('resize', setContentPadding);
+
 
             cartModal.addEventListener('transitionend', (event) => {
                 if (event.propertyName === 'opacity' && cartModal.classList.contains('hidden')) {
@@ -109,9 +135,9 @@
                 }
             });
 
-            const originalShowModal = showModal; 
+            const originalShowModal = showModal;
             showModal = (itemImage, itemPrice, cartTotal, itemSize, itemQuantity) => {
-                originalShowModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity); 
+                originalShowModal(itemImage, itemPrice, cartTotal, itemSize, itemQuantity);
                 setTimeout(() => {
                     modalContent.classList.remove('opacity-0', 'scale-95');
                     modalContent.classList.add('opacity-100', 'scale-100');
@@ -120,6 +146,26 @@
 
             // This listener is now on the specific button in item/detail.html, not here in base.html
             // If you had a form submission listener here previously, it's now handled by item/detail.html itself.
+
+            // Variables for scroll detection
+            var lastScrollTop = 0;
+
+            // --- NEW JAVASCRIPT FOR SCROLL BEHAVIOR ---
+            window.addEventListener('scroll', function() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                var currentNavbarHeight = mainNavbar.offsetHeight; // Get current height in case it changes
+
+                // Determine scroll direction
+                if (scrollTop > lastScrollTop && scrollTop > currentNavbarHeight) {
+                    // Scrolling down AND scrolled past the navbar's initial height
+                    mainNavbar.classList.add('-translate-y-full'); // Hide navbar by moving it up
+                } else {
+                    // Scrolling up OR at the very top of the page
+                    mainNavbar.classList.remove('-translate-y-full'); // Show navbar by moving it back
+                }
+                lastScrollTop = scrollTop;
+            });
+            // --- END NEW JAVASCRIPT FOR SCROLL BEHAVIOR ---
         });
     </script>
 
@@ -132,7 +178,7 @@
                     &times;
                 </button>
             </div>
-            
+
             <div class="flex items-center mb-4">
                 {# --- IMAGE CONTAINER --- #}
                 <div class="w-24 h-24 bg-gray-100 rounded-lg mr-4 flex items-center justify-center p-2 border border-gray-200 shadow-sm"> {# Added wrapper div and styling #}
@@ -147,7 +193,7 @@
             </div>
 
             <p class="text-gray-700 text-xl font-bold mb-6 pt-4 border-t border-gray-200">Current Cart Total: $<span id="modalCartTotal"></span></p>
-            
+
             <div class="flex flex-col sm:flex-row justify-between gap-3">
                 <a href="{% url 'cart:view_cart' %}" class="flex-1 text-center bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-semibold transition duration-200 ease-in-out transform hover:-translate-y-0.5 shadow-md">
                     Proceed to Cart

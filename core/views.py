@@ -27,6 +27,15 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 
 def index(request):
+    # Initialize variables for all cases (authenticated or not)
+    username = None
+    user = None
+    conversations = None # Initialize to None or empty queryset for consistency
+    conversation_count = 0
+    cart_item_count = 0
+    unread_notifications_count = 0
+    inbox_unread_count = 0  # <--- Initialize here!
+
     if request.user.is_authenticated:
         username = request.user.username
         user = get_object_or_404(User, username=username)
@@ -37,29 +46,34 @@ def index(request):
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_items = cart.items.all()
         cart_item_count = sum(item.quantity for item in cart_items)
-    else:
-        user = None
-        conversation_count = 0
-        cart_item_count = 0
-    # --- NEW: Calculate unread notifications count ---
-    unread_notifications_count = 0
-    if request.user.is_authenticated:
+
+        # Calculate unread notifications count for authenticated users
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
-    # --- END NEW ---
-    items = Items.objects.filter(is_sold=False).order_by('-created_at')[0:6]
+
+        # Calculate inbox unread count for authenticated users
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user,
+            notification_type='new_message',
+            is_read=False
+        ).count()
+
+    # Query items and categories (these don't depend on authentication status)
+    items = Items.objects.filter(is_sold=False).order_by('-created_at') # Fetches all, not just [0:6] as in snippet
     categories = Category.objects.all()
-    items = Items.objects.filter(is_sold=False).order_by('-created_at')
 
     return render(request, 'core/index.html', {
+        'inbox_unread_count': inbox_unread_count,
         'items': items,
         'categories': categories,
         'conversation_count': conversation_count,
-        'user': user,
+        'user': user, # This might be None if not authenticated
         'cart_item_count': cart_item_count,
-        'unread_notifications_count': unread_notifications_count,  # Pass unread count to context
+        'unread_notifications_count': unread_notifications_count,
     })
 
+
 def contact(request):
+    
     return render(request, 'core/contact.html')
 
 

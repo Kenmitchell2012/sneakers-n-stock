@@ -437,6 +437,13 @@ def user_orders(request):
     cart_items = cart.items.all()
     cart_item_count = sum(item.quantity for item in cart_items)
 
+    # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+    inbox_unread_count = Notification.objects.filter(
+        user=request.user,
+        notification_type='new_message',
+        is_read=False
+    ).count()
+
     # Get unread notification count for navbar (even for this page)
     unread_notifications_count = 0
     if request.user.is_authenticated:
@@ -451,6 +458,7 @@ def user_orders(request):
     )
 
     context = {
+        'inbox_unread_count': inbox_unread_count,  # Pass this for the navbar
         'cart_item_count': cart_item_count,  # For navbar
         'orders': orders,
         'conversation_count': conversation_count,  # Pass the count to the template
@@ -468,6 +476,13 @@ def user_order_detail(request, order_id):
     cart_items = cart.items.all()
     cart_item_count = sum(item.quantity for item in cart_items)
 
+    # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+    inbox_unread_count = Notification.objects.filter(
+        user=request.user,
+        notification_type='new_message',
+        is_read=False
+    ).count()
+
     unread_notifications_count = 0
     if request.user.is_authenticated:
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
@@ -477,6 +492,7 @@ def user_order_detail(request, order_id):
     items_total = sum(item.price * item.quantity for item in order_items_queryset)
 
     context = {
+        'inbox_unread_count': inbox_unread_count,  # Pass this for the navbar
         'cart_item_count': cart_item_count,  # For navbar
         'order': order,
         'order_items': order_items_queryset,

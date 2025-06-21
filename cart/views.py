@@ -15,8 +15,16 @@ from notifications.models import Notification
 def item_detail(request, item_id):
     item = get_object_or_404(Items, id=item_id)
     cart, created = Cart.objects.get_or_create(user=request.user)
+
+    # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+    inbox_unread_count = Notification.objects.filter(
+        user=request.user,
+        notification_type='new_message',
+        is_read=False
+    ).count()
+
     # notification_count = 0 # Initialize notification count, if you have a notifications app
-        # Get unread notification count for navbar (even for this page)
+    # Get unread notification count for navbar (even for this page)
     unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
     
@@ -34,6 +42,7 @@ def item_detail(request, item_id):
     related_items = Items.objects.filter(category=item.category).exclude(id=item.id)[:4]  # Adjust as needed
 
     return render(request, 'item/detail.html', {
+        'inbox_unread_count': inbox_unread_count, # For navbar
         'item': item,
         'form': form,
         'related_items': related_items,
@@ -308,8 +317,15 @@ def view_cart(request):
         # Get unread notification count for navbar (even for this page)
     unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
+    # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+    inbox_unread_count = Notification.objects.filter(
+        user=request.user,
+        notification_type='new_message',
+        is_read=False
+    ).count()
+
     
-    # --- NEW LOGIC: Determine if checkout is possible ---
+    # --- Determine if checkout is possible ---
     can_checkout = True # Assume true until an out-of-stock item is found
     for item_in_cart in cart_items:
         if item_in_cart.quantity > item_in_cart.size_variant.quantity:
@@ -318,9 +334,10 @@ def view_cart(request):
     
     if not cart_items.exists(): # If cart is empty, cannot checkout
         can_checkout = False
-    # --- END NEW LOGIC ---
+    # --- END LOGIC ---
 
     return render(request, 'cart/view_cart.html', {
+        'inbox_unread_count': inbox_unread_count, # For navbar
         'cart': cart, 
         'cart_items': cart_items, 
         'conversation_count': conversation_count, 

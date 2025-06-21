@@ -1,3 +1,4 @@
+{# notifications/notifications.html #}
 {% extends 'core/base.html' %}
 {% load static %}
 
@@ -22,26 +23,29 @@
             </div>
             <ul class="divide-y divide-gray-200">
                 {% for notification in notifications %}
-                    <li class="py-3 px-2 rounded-lg {% if not notification.is_read %}bg-blue-50{% endif %}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">
-                                    {{ notification.content }} {# <--- CHANGE THIS LINE! #}
-                                </p>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    {{ notification.created_at|date:"M d, Y H:i" }}
-                                    {% if notification.order %}
-                                        | Order #{{ notification.order.id }}
-                                    {% endif %}
-                                </p>
+                    <li class="py-3 px-2 rounded-lg {% if not notification.is_read %}bg-blue-50{% endif %} hover:bg-gray-100 transition-colors duration-150 cursor-pointer">
+                        {# Use get_absolute_url method from the Notification model #}
+                        {% if notification.get_absolute_url != '#' %} {# Check if a valid URL is returned #}
+                            <a href="{% url 'notifications:read_and_redirect' notification.id %}" class="block text-inherit no-underline">
+                        {% endif %}
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">
+                                        {{ notification.content }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ notification.created_at|date:"M d, Y H:i" }}
+                                        {% if notification.order %}
+                                            | Order #{{ notification.order.id }}
+                                        {% elif notification.conversation %}
+                                            | Conversation about '{{ notification.conversation.item.name }}'
+                                        {% endif %}
+                                    </p>
+                                </div>
                             </div>
-                            {% if not notification.is_read %}
-                                <form action="{% url 'notifications:mark_read' notification.id %}" method="post" class="ml-4 flex-shrink-0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="text-xs text-blue-500 hover:underline">Mark as Read</button>
-                                </form>
-                            {% endif %}
-                        </div>
+                        {% if notification.get_absolute_url != '#' %}
+                            </a>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

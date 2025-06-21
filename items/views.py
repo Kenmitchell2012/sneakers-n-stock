@@ -34,10 +34,10 @@ def items(request):
             Q(price__icontains=query) # Note: price__icontains might behave unexpectedly for non-numeric queries
         )
 
-    # --- NEW LOGIC: Initialize user-specific data to default values for guests ---
+
     conversation_count = 0
     cart_item_count = 0
-    unread_notifications_count = 0 # <--- FIX: Initialize here for unauthenticated users
+    unread_notifications_count = 0 
 
     # Only fetch user-specific data if the user is authenticated
     if request.user.is_authenticated:
@@ -47,13 +47,21 @@ def items(request):
         # Get unread notification count for navbar
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
+        # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user,
+            notification_type='new_message',
+            is_read=False
+        ).count()
+
         # Cart quantity info
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_items = cart.items.all()
         cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart_items) # Use item_in_cart for clarity
-    # --- END NEW LOGIC ---
+
 
     return render(request, 'item/items.html', {
+        "inbox_unread_count": inbox_unread_count, # Pass this for the navbar
         'items': items,
         'query': query,
         'categories': categories,
@@ -100,47 +108,46 @@ def live_search_items(request):
 def detail(request, pk):
     item = get_object_or_404(Items, pk=pk)
 
-    # Get the cart item count for the authenticated user
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_items = cart.items.all()
-    cart_item_count = sum(item.quantity for item in cart_items)
-    
-    # Initialize variables for authenticated-only data
+    # Initialize variables for authenticated-only data, so they always exist in context
     conversation_count = 0
     cart_item_count = 0
-    form = AddToCartForm() # Initialize form for GET request (and unauthenticated users)
-    # notification_count = 0 # Initialize notification count, if you have a notifications app
-        # Get unread notification count for navbar (even for this page)
-    unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    unread_notifications_count = 0  # Initialize for all cases
+    inbox_unread_count = 0          # Initialize for all cases
 
+    form = AddToCartForm() # Initialize form for GET request (and unauthenticated users)
 
     # Only fetch user-specific data if the user is authenticated
     if request.user.is_authenticated:
         conversations = Conversation.objects.filter(members__in=[request.user.id])
         conversation_count = conversations.count()
 
+        # The inbox_unread_count for the navbar should count ALL unread 'new_message' notifications for the user
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user,
+            notification_type='new_message',
+            is_read=False
+        ).count()
+
+        # Get unread notification count for navbar
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
         # Get the cart and its item count for the authenticated user
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_items = cart.items.all()
         cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart_items) # Use a different loop var name here (item_in_cart)
 
-        # If a POST request comes in for Add to Cart, it will be handled by the @login_required add_to_cart view
-        # The form is rendered here, but its action goes to cart:add_to_cart
-        # So, we can just initialize the form here.
-        
     # get the related items for the item being viewed
     related_items = Items.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[:5] # Limit to 5 related items
-    
-    # If the user is not authenticated, the form will still be rendered, but it won't be used for adding to cart
+
     context = {
+        'inbox_unread_count': inbox_unread_count, # Pass this for the navbar
         'cart_item_count': cart_item_count, # For navbar
         'item': item,
         'related_items': related_items,
         'conversation_count': conversation_count,
         'form': form, # This form will be for AddToCart, regardless of login status
-        'cart_item_count': cart_item_count,
+        # 'cart_item_count' is already in context once, no need to repeat
         'unread_notifications_count': unread_notifications_count, # For navbar
-        # 'is_authenticated': request.user.is_authenticated, # Can pass this to template for explicit checks
     }
     return render(request, 'item/detail.html', context)
 

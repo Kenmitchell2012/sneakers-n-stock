@@ -5,23 +5,30 @@
 {% block content %}
 <div class="container mx-auto px-4 md:px-8 lg:px-16">
     <h1 class="mb-6 text-3xl font-semibold">
-        Inbox 
+        Inbox
         <span class="text-2xl text-gray-500">({{ conversation_count }})</span>
     </h1>
 
     <div class="space-y-6">
         {% if conversations %}
             {% for conversation in conversations %}
+                {# Conditional classes for unread conversations #}
                 <div class="relative group">
-                    <a href="{% url 'conversations:detail' conversation.id %}" class="block bg-gray-100 rounded-xl p-4 hover:bg-gray-200 transition duration-150">
+                    <a href="{% url 'conversations:detail' conversation.id %}"
+                       class="block rounded-xl p-4 transition duration-150
+                              {% if conversation.is_unread_for_user %}
+                                  bg-blue-100 hover:bg-blue-200 border border-blue-300
+                              {% else %}
+                                  bg-gray-100 hover:bg-gray-200 border border-gray-200
+                              {% endif %}">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 pr-4">
                                 {# --- IMAGE CONTAINER --- #}
-                                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center p-1 border border-gray-200 shadow-sm"> {# Added flex/justify/items/p-1/border/shadow #}
+                                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center p-1 border border-gray-200 shadow-sm">
                                     {% if conversation.item.images.exists %}
-                                        <img src="{{ conversation.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ conversation.item.name }}"> {# Changed object-cover to object-contain #}
+                                        <img src="{{ conversation.item.images.first.image.url }}" class="w-full h-full object-contain" alt="{{ conversation.item.name }}">
                                     {% else %}
-                                        <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder"> {# Changed object-cover to object-contain #}
+                                        <img src="{% static 'media/item_images/images.png' %}" class="w-full h-full object-contain" alt="Placeholder">
                                     {% endif %}
                                 </div>
                                 {# --- END IMAGE CONTAINER --- #}
@@ -30,14 +37,18 @@
                             <div class="flex-grow">
                                 {% for member in conversation.members.all %}
                                     {% if member != request.user %}
-                                        <p class="mb-2 text-lg font-semibold text-gray-700">
+                                        <p class="mb-2 text-lg font-semibold {% if conversation.is_unread_for_user %}text-blue-800{% else %}text-gray-700{% endif %}">
                                             {{ member.username }}
-                                            <span class="text-sm text-gray-500">| {{ conversation.updated_at|date:"M d, Y H:i" }}</span> {# Added date formatting #}
+                                            <span class="text-sm {% if conversation.is_unread_for_user %}text-blue-600{% else %}text-gray-500{% endif %}">| {{ conversation.updated_at|date:"M d, Y H:i" }}</span>
                                         </p>
-                                        <p class="text-gray-500">{{ conversation.item.name }}</p>
+                                        <p class="{% if conversation.is_unread_for_user %}text-blue-700{% else %}text-gray-500{% endif %}">{{ conversation.item.name }}</p>
                                     {% endif %}
                                 {% endfor %}
                             </div>
+                            {# Optional: Add a visual badge for unread #}
+                            {% if conversation.is_unread_for_user %}
+                                <span class="ml-4 flex-shrink-0 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">New!</span>
+                            {% endif %}
                         </div>
                     </a>
                     <div class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden group-hover:flex items-center">
@@ -50,7 +61,6 @@
         {% else %}
             <p class="text-lg text-gray-500">No messages found.</p>
         {% endif %}
-
     </div>
 </div>
 {% endblock %}
