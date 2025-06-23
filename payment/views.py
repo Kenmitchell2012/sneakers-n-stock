@@ -425,6 +425,44 @@ def payment_cancel(request):
     }
     return render(request, 'payment/cancel.html', context)
 
+@login_required
+@require_POST # Ensure this view only accepts POST requests
+def request_order_cancellation(request, order_id):
+    """
+    Allows a customer to request the cancellation of their order.
+    Sets the order status to 'cancellation_requested' and notifies admin.
+    """
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    # Only allow cancellation request if order is in 'pending' or 'processing' status
+    if order.status == 'pending' or order.status == 'processing':
+        order.status = 'cancellation_requested'
+        order.save(update_fields=['status'])
+
+        messages.success(request, f"Cancellation request for Order #{order.id} has been submitted. An admin will review it shortly.")
+
+        # --- NEW: Notify Admin ---
+        # You'll need to define who your admin users are.
+        # For simplicity, let's notify all superusers.
+        admin_users = User.objects.filter(is_superuser=True)
+        for admin_user in admin_users:
+            Notification.objects.create(
+                user=admin_user,
+                notification_type='order_status_update', # Use a general status update type
+                content=f"Cancellation requested for Order #{order.id} by {request.user.username}. Status: {order.get_status_display()}.",
+                order=order, # Link the notification to the order
+                is_read=False # Ensure it's unread for the admin
+            )
+        # --- END NEW ---
+
+    elif order.status == 'cancellation_requested':
+        messages.info(request, f"Cancellation for Order #{order.id} has already been requested and is awaiting admin review.")
+    else:
+        # For orders already shipped, delivered, or canceled
+        messages.error(request, f"Order #{order.id} cannot be cancelled at its current status of '{order.get_status_display()}'. Please contact support if you believe this is an error.")
+
+    return redirect('payment:user_order_detail', order_id=order.id)
+
 # --- User and Admin Order Dashboard Views ---
 
 @login_required
@@ -505,55 +543,71 @@ def user_order_detail(request, order_id):
 def admin_dashboard(request):
     """
     Provides an overview dashboard for superusers, displaying order statistics.
+    Now includes correct count for cancellation requested orders.
     """
     if not request.user.is_superuser:
         messages.error(request, "Access denied. You must be a superuser to view this page.")
         return redirect('core:index')
 
     # --- 1. Get Filter Parameter ---
-    # Default to showing 'pending' orders if no filter or 'all' is explicitly requested
-    status_filter = request.GET.get('status', 'pending') # Default filter
+    status_filter = request.GET.get('status', 'all')
 
     # --- 2. Calculate Summary Metrics (for the top cards) ---
     all_orders_queryset = Order.objects.all()
     shipped_orders_queryset = Order.objects.filter(status='shipped')
-    unshipped_orders_queryset = Order.objects.filter(status='pending') # Or 'delivered', 'canceled'
+    unshipped_orders_queryset = Order.objects.filter(status='pending')
+    canceled_orders_queryset = Order.objects.filter(status='canceled')
+    delivered_orders_queryset = Order.objects.filter(status='delivered')
+    cancellation_requested_orders_queryset = Order.objects.filter(status='cancellation_requested') # NEW: Queryset for cancellation requests
 
     total_orders_count = all_orders_queryset.count()
     shipped_orders_count = shipped_orders_queryset.count()
     unshipped_orders_count = unshipped_orders_queryset.count()
+    canceled_orders_count = canceled_orders_queryset.count()
+    delivered_orders_count = delivered_orders_queryset.count()
+    cancellation_requested_orders_count = cancellation_requested_orders_queryset.count() # NEW: Count for cancellation requests
 
     total_revenue_value = all_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
     total_shipped_sales_value = shipped_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
     total_pending_sales_value = unshipped_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
+    total_canceled_sales_value = canceled_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
+    total_delivered_sales_value = delivered_orders_queryset.aggregate(total_sum=Sum('amount_paid'))['total_sum'] or 0.0
 
     # --- 3. Filter Orders for the List Display (bottom half) ---
-    orders_for_list = Order.objects.all().order_by('-created_at') # Start with all orders
+    orders_for_list = Order.objects.all().order_by('-created_at')
 
     if status_filter == 'shipped':
         orders_for_list = orders_for_list.filter(status='shipped')
     elif status_filter == 'pending':
         orders_for_list = orders_for_list.filter(status='pending')
-    elif status_filter == 'delivered': # Add if you plan to filter by delivered
+    elif status_filter == 'delivered':
         orders_for_list = orders_for_list.filter(status='delivered')
-    elif status_filter == 'canceled': # Add if you plan to filter by canceled
+    elif status_filter == 'cancellation_requested':
+        orders_for_list = orders_for_list.filter(status='cancellation_requested')
+    elif status_filter == 'canceled':
         orders_for_list = orders_for_list.filter(status='canceled')
-    # If status_filter is 'all' or an invalid value, it will show all orders by default (which is good)
 
     context = {
         # Summary Metrics
-        'total_orders_count': total_orders_count, # Renamed for clarity with _count suffix
+        'total_orders_count': total_orders_count,
         'shipped_orders_count': shipped_orders_count,
         'unshipped_orders_count': unshipped_orders_count,
+        'canceled_orders_count': canceled_orders_count,
+        'delivered_orders_count': delivered_orders_count,
+        'cancellation_requested_orders_count': cancellation_requested_orders_count, # NEW: Pass the count
+
         'total_revenue': total_revenue_value,
         'total_shipped_sales_value': total_shipped_sales_value,
         'total_pending_sales_value': total_pending_sales_value,
+        'total_canceled_sales_value': total_canceled_sales_value,
+        'total_delivered_sales_value': total_delivered_sales_value,
 
         # For the Order List
-        'orders_for_list': orders_for_list, # The filtered list of orders
-        'current_status_filter': status_filter, # To highlight active filter in template
+        'orders_for_list': orders_for_list,
+        'current_status_filter': status_filter,
     }
     return render(request, 'payment/admin_dashboard.html', context)
+
 
 # --- Order Detail View for Admins ---
 @login_required
@@ -561,6 +615,7 @@ def order_detail(request, order_id):
     """
     Displays the details of a specific order for superusers,
     allowing them to update the order's shipping status and tracking number.
+    Fixes tracking number display in 'shipped' notification.
     """
     if not request.user.is_superuser:
         messages.error(request, 'Access denied. You must be logged in as an admin.')
@@ -574,69 +629,128 @@ def order_detail(request, order_id):
 
 
     if request.method == 'POST':
-        # Retrieve the new status value and tracking number from the form submission
         new_status = request.POST.get('shipping_status')
-        tracking_number_input = request.POST.get('tracking_number', '').strip() # Get tracking number, default to empty string
+        tracking_number_input = request.POST.get('tracking_number', '').strip()
 
         try:
-            with transaction.atomic(): # Ensure both updates are atomic
+            with transaction.atomic():
                 status_updated = False
                 tracking_updated = False
                 old_status = order.status # Store old status before potential update
+                old_tracking_number = order.tracking_number # Store old tracking number for comparison
+
+                # --- Process Tracking Number Update FIRST if it's changing ---
+                # This ensures order.tracking_number holds the NEW value before status is saved
+                if 'tracking_number' in request.POST and old_tracking_number != tracking_number_input:
+                    order.tracking_number = tracking_number_input if tracking_number_input else None
+                    order.save(update_fields=['tracking_number']) # Save tracking number immediately
+                    if tracking_number_input:
+                        messages.success(request, 'Tracking number updated.')
+                    else:
+                        messages.info(request, 'Tracking number cleared.')
+                    tracking_updated = True # Flag that tracking was updated in this request
 
                 # Update order status if provided and valid
                 valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
                 if new_status and new_status in valid_statuses:
                     # Only update if the status is actually changing
-                    if order.status != new_status:
+                    if old_status != new_status: # Compare with old status
                         order.status = new_status
-                        order.save(update_fields=['status'])
+                        order.save(update_fields=['status']) # Save status (order now has latest tracking #)
                         messages.success(request, f'Order status updated to {order.get_status_display()}.')
                         status_updated = True
 
                         # --- Notification Logic for Status Change ---
                         if new_status == 'shipped':
+                            # FIX: Now order.tracking_number should hold the correct, newly saved value
                             Notification.objects.create(
                                 user=order.user,
-                                order=order, # Link the notification directly to the order
+                                order=order,
                                 notification_type='order_shipped',
+                                # Using order.tracking_number, which is now updated if submitted in same req
                                 content=f'Your order #{order.id} has been shipped! Tracking Number: {order.tracking_number if order.tracking_number else "N/A"}.'
                             )
                             messages.info(request, "Customer has been notified that the order is shipped.")
-                        elif new_status == 'canceled':
+                        # --- Rest of existing status notifications (cancellation, delivered, etc.) ---
+                        elif new_status == 'canceled' and old_status != 'canceled':
+                            # ... (cancellation logic as before) ...
+                            try:
+                                if order.payment_intent_id:
+                                    payment_intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
+                                    if payment_intent.status == 'succeeded' and payment_intent.amount_received > 0:
+                                        refund = stripe.Refund.create(
+                                            payment_intent=order.payment_intent_id,
+                                            amount=int(order.amount_paid * 100)
+                                        )
+                                        logger.info(f"Stripe Refund initiated for Payment Intent {order.payment_intent_id}, Refund ID: {refund.id}")
+                                        messages.info(request, f"Full refund of ${order.amount_paid} processed successfully via Stripe.")
+                                    else:
+                                        logger.warning(f"Payment Intent {order.payment_intent_id} not in 'succeeded' state or amount_received is 0. Cannot refund.")
+                                        messages.warning(request, "Stripe refund could not be processed automatically (payment not captured or amount is zero). Please check Stripe manually.")
+                                else:
+                                    logger.warning(f"Order {order.id} has no payment_intent_id. Cannot process Stripe refund automatically.")
+                                    messages.warning(request, "Order has no Stripe Payment Intent ID. Please process refund manually if applicable.")
+
+                                for order_item in order.order_items.all():
+                                    if order_item.size_variant:
+                                        order_item.size_variant.quantity += order_item.quantity
+                                        order_item.size_variant.save(update_fields=['quantity'])
+                                        logger.info(f"Restocked {order_item.quantity} of {order_item.item.name} (Size: {order_item.size_variant.size}).")
+                                messages.info(request, "Items restocked successfully.")
+
+                                Notification.objects.create(
+                                    user=order.user,
+                                    notification_type='order_canceled',
+                                    content=f'Your order #{order.id} has been canceled and a full refund of ${order.amount_paid} has been processed. Please allow 5-10 business days for the refund to appear on your statement.',
+                                    order=order,
+                                    is_read=False
+                                )
+                                messages.info(request, "Customer notified about cancellation and refund.")
+
+                            except stripe.error.StripeError as se:
+                                logger.error(f"Stripe error during cancellation for Order {order.id}: {se}", exc_info=True)
+                                messages.error(request, f"Stripe refund failed: {se}. Order status updated, but refund needs manual intervention!")
+                            except Exception as e:
+                                logger.error(f"Unexpected error during cancellation processing for Order {order.id}: {e}", exc_info=True)
+                                messages.error(request, "An unexpected error occurred during cancellation. Please verify refund and stock manually.")
+
+                        elif new_status == 'cancellation_requested' and old_status != 'cancellation_requested':
                             Notification.objects.create(
                                 user=order.user,
-                                order=order, # Link the notification directly to the order
-                                notification_type='order_canceled',
-                                content=f'Your order #{order.id} has been canceled. Please contact support for more details.'
+                                order=order,
+                                notification_type='order_status_update',
+                                content=f'The status of your order #{order.id} has been updated to "Cancellation Requested". An admin will review it shortly.'
                             )
-                            messages.info(request, "Customer has been notified that the order is canceled.")
-                        # --- End Notification Logic ---
+                            messages.info(request, "Customer notified about cancellation request (admin initiated).")
+                        elif new_status == 'delivered':
+                            Notification.objects.create(
+                                user=order.user,
+                                order=order,
+                                notification_type='order_delivered',
+                                content=f'Your order #{order.id} has been delivered! Enjoy your items!'
+                            )
+                            messages.info(request, "Customer notified that the order has been delivered.")
+                        # --- End Status Notification Logic ---
 
                 elif new_status: # If new_status was provided but invalid
                     messages.error(request, 'Invalid status provided.')
 
-                # Update tracking number if it's different from current
-                if 'tracking_number' in request.POST and order.tracking_number != tracking_number_input:
-                    order.tracking_number = tracking_number_input if tracking_number_input else None # Save None if empty string
-                    order.save(update_fields=['tracking_number'])
-                    if tracking_number_input:
-                        messages.success(request, 'Tracking number updated.')
-                    else:
-                        messages.info(request, 'Tracking number cleared.')
-                    tracking_updated = True
-
-                    # --- Notification Logic for Tracking Number Update (if status is already shipped) ---
-                    # This is optional, but useful if tracking number is added *after* initial "shipped" status
-                    if order.status == 'shipped' and status_updated is False: # Only if status wasn't just set to shipped
-                         Notification.objects.create(
+                # --- Conditional Tracking Update Notification ---
+                # Only send a separate tracking update notification IF:
+                # 1. Tracking was updated (tracking_updated is true)
+                # 2. Status was NOT just set to 'shipped' (status_updated is false)
+                #    OR, if status was updated, the old status wasn't already 'shipped'
+                # This prevents duplicate notifications if shipped status and tracking are set simultaneously
+                if tracking_updated:
+                    if not status_updated or (status_updated and old_status != 'shipped'):
+                        Notification.objects.create(
                             user=order.user,
-                            order=order, # Link the notification directly to the order
+                            order=order,
                             notification_type='tracking_update',
                             content=f'The tracking number for your order #{order.id} has been updated to: {order.tracking_number}.'
                         )
-                         messages.info(request, "Customer has been notified about tracking number update.")
-                    # --- End Notification Logic ---
+                        messages.info(request, "Customer has been notified about tracking number update.")
+
 
                 if not (status_updated or tracking_updated):
                     messages.info(request, 'No changes detected for update.')
@@ -646,13 +760,22 @@ def order_detail(request, order_id):
             logger.error(f"Error updating order {order_id} details: {e}", exc_info=True)
             messages.error(request, "An error occurred while updating order details.")
 
-        return redirect('payment:order_detail', order_id=order_id)
+        return redirect('payment:order_detail', order_id=order.id)
 
     # For GET requests, render the detail page
     context = {
         'order': order,
         'order_items': order_items_queryset,
-        'items': items,
+        'items_total': items_total,
+        # 'items': items, # Only include if you actively use it in the GET context
+    }
+    return render(request, 'payment/order_detail.html', context)
+
+    # For GET requests, render the detail page
+    context = {
+        'order': order,
+        'order_items': order_items_queryset,
+        'items': items, # Ensure 'items' is defined for GET request context if needed in template
         'items_total': items_total,
     }
     return render(request, 'payment/order_detail.html', context)

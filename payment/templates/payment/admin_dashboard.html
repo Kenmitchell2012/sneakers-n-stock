@@ -9,7 +9,8 @@
         <h1 class="text-3xl font-bold mb-8 text-gray-800">Admin Overview</h1>
 
         {# --- TOP ROW: SUMMARY METRICS --- #}
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+        {# Adjusted grid for 6 items #}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-md border border-blue-300 transform hover:scale-105 transition duration-200 ease-in-out">
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">📊 Total Orders</h2>
                 <p class="text-3xl font-bold text-blue-600">{{ total_orders_count }}</p>
@@ -26,28 +27,62 @@
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">📉 Pending Sales Value</h2>
                 <p class="text-3xl font-bold text-orange-600">${{ total_pending_sales_value|floatformat:2 }}</p>
             </div>
+            {# Canceled Orders Metrics #}
+            <div class="bg-white p-6 rounded-xl shadow-md border border-red-400">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">🚫 Canceled Orders</h2>
+                <p class="text-3xl font-bold text-red-700">{{ canceled_orders_count }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border border-red-300">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">💸 Canceled Sales Value</h2>
+                <p class="text-3xl font-bold text-red-600">${{ total_canceled_sales_value|floatformat:2 }}</p>
+            </div>
+            {# Delivered Orders Metrics #}
+            <div class="bg-white p-6 rounded-xl shadow-md border border-blue-400">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">📦 Delivered Orders</h2>
+                <p class="text-3xl font-bold text-blue-700">{{ delivered_orders_count }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border border-blue-300">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">✅ Delivered Sales Value</h2>
+                <p class="text-3xl font-bold text-blue-600">${{ total_delivered_sales_value|floatformat:2 }}</p>
+            </div>
         </div>
         {# --- END SUMMARY METRICS --- #}
 
         {# --- ORDER FILTER BUTTONS --- #}
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Filter Orders</h2>
         <div class="flex flex-wrap gap-4 mb-8">
-            <a href="{% url 'payment:admin_dashboard' %}?status=all" 
-               class="px-6 py-3 rounded-lg font-semibold transition duration-200 
+            <a href="{% url 'payment:admin_dashboard' %}?status=all"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
                       {% if current_status_filter == 'all' %}bg-blue-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
                 All Orders ({{ total_orders_count }})
             </a>
-            <a href="{% url 'payment:admin_dashboard' %}?status=pending" 
-               class="px-6 py-3 rounded-lg font-semibold transition duration-200 
+            <a href="{% url 'payment:admin_dashboard' %}?status=pending"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
                       {% if current_status_filter == 'pending' %}bg-yellow-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
                 Pending ({{ unshipped_orders_count }})
             </a>
-            <a href="{% url 'payment:admin_dashboard' %}?status=shipped" 
-               class="px-6 py-3 rounded-lg font-semibold transition duration-200 
+            <a href="{% url 'payment:admin_dashboard' %}?status=shipped"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
                       {% if current_status_filter == 'shipped' %}bg-green-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
                 Shipped ({{ shipped_orders_count }})
             </a>
-            {# Add more filters for 'delivered', 'canceled' if you like #}
+            {# FIX: Cancellation Requests Filter Button #}
+            <a href="{% url 'payment:admin_dashboard' %}?status=cancellation_requested"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
+                      {% if current_status_filter == 'cancellation_requested' %}bg-orange-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                Cancellation Requests ({{ cancellation_requested_orders_count }}) {# Use correct count here #}
+            </a>
+            <a href="{% url 'payment:admin_dashboard' %}?status=canceled"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
+                      {% if current_status_filter == 'canceled' %}bg-red-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                Canceled ({{ canceled_orders_count }})
+            </a>
+            {# Delivered Filter Button #}
+            <a href="{% url 'payment:admin_dashboard' %}?status=delivered"
+               class="px-6 py-3 rounded-lg font-semibold transition duration-200
+                      {% if current_status_filter == 'delivered' %}bg-blue-600 text-white shadow-md{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                Delivered ({{ delivered_orders_count }})
+            </a>
         </div>
         {# --- END ORDER FILTER BUTTONS --- #}
 
@@ -55,21 +90,20 @@
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Orders</h2>
         <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
             {% if orders_for_list %}
-                <ul class="space-y-4"> 
+                <ul class="space-y-4">
                     {% for order in orders_for_list %}
-                        {# Make entire <li> clickable, now styled as a distinct card #}
-                        <li class="mb-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100 transform hover:scale-1005 hover:bg-gray-50 transition duration-150 ease-in-out"> {# <-- ADDED CLASSES #}
-                            <a href="{% url 'payment:order_detail' order.id %}" 
-                               class="block"> 
-                                <div class="flex justify-between items-center"> 
+                        <li class="mb-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100 transform hover:scale-1005 hover:bg-gray-50 transition duration-150 ease-in-out">
+                            <a href="{% url 'payment:order_detail' order.id %}"
+                               class="block">
+                                <div class="flex justify-between items-center">
                                     <div>
                                         <p class="text-lg font-semibold text-gray-800">Order #{{ order.id }}</p>
                                         <p class="text-sm text-gray-600">{{ order.full_name }} | {{ order.created_at|date:"M d, Y" }}</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-lg font-bold text-gray-800">${{ order.amount_paid|floatformat:2 }}</p>
-                                        <span class="text-sm px-2 py-1 rounded-full 
-                                            {% if order.status == 'shipped' %}bg-green-100 text-green-700{% elif order.status == 'pending' %}bg-yellow-100 text-yellow-700{% elif order.status == 'delivered' %}bg-blue-100 text-blue-700{% elif order.status == 'canceled' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                        <span class="text-sm px-2 py-1 rounded-full
+                                            {% if order.status == 'shipped' %}bg-green-100 text-green-700{% elif order.status == 'pending' %}bg-yellow-100 text-yellow-700{% elif order.status == 'delivered' %}bg-blue-100 text-blue-700{% elif order.status == 'cancellation_requested' %}bg-orange-100 text-orange-700{% elif order.status == 'canceled' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
                                             {{ order.get_status_display }}
                                         </span>
                                     </div>

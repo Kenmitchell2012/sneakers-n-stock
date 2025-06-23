@@ -36,6 +36,7 @@ class Order(models.Model):
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'), # Optional: Add more statuses as needed
         ('canceled', 'Canceled'),
+        ('cancellation_requested', 'Cancellation Requested'),
     )
     # --- END STATUS CHOICES ---
 
@@ -45,7 +46,7 @@ class Order(models.Model):
     shipping_address = models.TextField()
     amount_paid = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending')
     shipping_phone_number = models.CharField(max_length=20, blank=True, null=True) # Max length for phone number
     date_shipped = models.DateTimeField(null=True, blank=True) # To store when it was shipped
     tracking_number = models.CharField(max_length=255, blank=True, null=True) 
@@ -58,6 +59,10 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.id} by {self.full_name} ({self.get_status_display()})" # Added status to __str__
+    
+    def get_total_items_price(self):
+        # Sum of prices of all order items
+        return sum(item.get_total_price() for item in self.order_items.all())
 
 
 # @receiver(post_save, sender=Order) # This decorator should be above your function
