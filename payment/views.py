@@ -16,6 +16,7 @@ from django.db.models import Prefetch
 import stripe
 import json
 import logging
+import time
 
 from conversation.models import Conversation
 from items.models import Items, SizeVariant, ItemImage
@@ -340,13 +341,11 @@ def stripe_webhook(request):
 # --- User-Facing Payment Status Views ---
 
 def payment_success(request):
-    logger.info(f"DEBUG: payment_success hit. Session ID received: {request.session.get('stripe_checkout_session_id')}")
     """
     Renders the success page after a payment is confirmed by Stripe.
-    Attempts to retrieve and display details of the most recent successful order.
+    Attempts to retrieve and display details of the most recent successful order,
+    with retries to account for webhook processing time.
     """
-
-    # Get unread notification count for navbar
     unread_notifications_count = 0
     if request.user.is_authenticated:
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
@@ -355,43 +354,44 @@ def payment_success(request):
     order_items = None
     items_total = 0
 
-    # Try to retrieve the Stripe Checkout Session ID from the session
     stripe_checkout_session_id = request.session.get('stripe_checkout_session_id')
 
     if request.user.is_authenticated and stripe_checkout_session_id:
-        try:
-            logger.info(f"DEBUG: Attempting to find Order for user {request.user.id} with session ID {stripe_checkout_session_id}")
-            # Find the order associated with this checkout session ID
-            order = Order.objects.select_related('user').prefetch_related('order_items__item').get(
-                user=request.user,
-                stripe_checkout_session_id=stripe_checkout_session_id
-            )
-            # ADD THIS LINE HERE:
-            logger.info(f"DEBUG: Order found! Order ID: {order.id}, Payment Intent ID: {order.payment_intent_id}")
+        # --- NEW: Retry logic for fetching the Order ---
+        max_retries = 5
+        retry_delay_seconds = 1 # Wait 1 second between retries
+        for i in range(max_retries):
+            try:
+                logger.info(f"DEBUG: Attempting to find Order for user {request.user.id} with session ID {stripe_checkout_session_id} (Attempt {i+1}/{max_retries})")
+                order = Order.objects.select_related('user').prefetch_related('order_items__item').get(
+                    user=request.user,
+                    stripe_checkout_session_id=stripe_checkout_session_id
+                )
+                logger.info(f"DEBUG: Order found! Order ID: {order.id}, Payment Intent ID: {order.payment_intent_id}")
+                break # Order found, exit loop
+            except Order.DoesNotExist:
+                logger.warning(f"DEBUG: Order not found yet for session ID {stripe_checkout_session_id} on attempt {i+1}. Retrying in {retry_delay_seconds}s...")
+                time.sleep(retry_delay_seconds) # Wait before retrying
+                retry_delay_seconds *= 1.5 # Optional: Increase delay slightly for subsequent retries (backoff)
+            except Exception as e:
+                logger.error(f"DEBUG: Unexpected error fetching order on attempt {i+1} for user {request.user.id}, session {stripe_checkout_session_id}: {e}", exc_info=True)
+                messages.error(request, "An unexpected error occurred while fetching your order details.")
+                break # Exit on other errors
 
+        # If order was found after retries, then process its items
+        if order:
             order_items = order.order_items.all()
             items_total = sum(item.price * item.quantity for item in order_items)
-
-            # --- DEBUG LOGS ---
-            logger.info(f"DEBUG: Found Order ID: {order.id}, Total Paid: {order.amount_paid}")
-            if order_items:
-                for idx, oi in enumerate(order_items):
-                    logger.info(f"DEBUG: OrderItem {idx+1}: Item Name='{oi.item.name}', Quantity={oi.quantity}, Price={oi.price}, Calculated Total={oi.get_total_price()}")
-            else:
-                logger.warning(f"DEBUG: No order_items found for Order ID: {order.id}")
-            # --- END DEBUG LOGS ---
 
             # Optional: Clear the session variable after use
             if 'stripe_checkout_session_id' in request.session:
                 logger.info(f"DEBUG: Deleting stripe_checkout_session_id from session.")
                 del request.session['stripe_checkout_session_id']
+        else:
+            # If after all retries, the order is still not found
+            messages.warning(request, "Could not find details for your recent order after multiple attempts. Please check your order history.")
+            logger.warning(f"DEBUG: Payment success page: Order not found for user {request.user.id} with session ID {stripe_checkout_session_id} after all retries. Order.DoesNotExist.")
 
-        except Order.DoesNotExist:
-            messages.warning(request, "Could not find details for your recent order. Please check your order history.")
-            logger.warning(f"DEBUG: Payment success page: Order not found for user {request.user.id} with session ID {stripe_checkout_session_id}. Order.DoesNotExist.")
-        except Exception as e:
-            messages.error(request, "An error occurred while fetching your order details.")
-            logger.error(f"DEBUG: Payment success page: Error fetching order for user {request.user.id}, session {stripe_checkout_session_id}: {e}", exc_info=True)
     elif not request.user.is_authenticated:
         messages.info(request, "Please log in to view your order history and details.")
         logger.info(f"DEBUG: User not authenticated on payment_success page.")

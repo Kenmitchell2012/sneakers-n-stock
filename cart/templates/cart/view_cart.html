@@ -5,85 +5,103 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-full mx-auto px-2 py-4">
-    <h1 class="text-lg font-semibold text-center mb-4">
+{# Main container: Responsive padding and max-width #}
+<div class="max-w-6xl mx-auto px-4 py-8"> {# Adjusted max-width and padding for overall page #}
+    <h1 class="text-4xl sm:text-3xl font-bold text-center text-gray-800 mb-8"> {# Adjusted heading size for responsiveness #}
         Your Bag ({{ cart_item_count }})
     </h1>
 
     {% if cart.items.count > 0 %}
-        <div class="flex justify-end mb-4 pr-2">
-            <a href="{% url 'cart:clear_cart' %}" class="text-red-500 text-xs hover:underline">Clear Cart</a>
-        </div>
+        {# Outer grid for cart items and summary #}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6"> {# 1 column on mobile, 3 columns on md+ #}
 
-        <div class="space-y-4">
-            {% for cart_item in cart.items.all %}
-                <div class="bg-white p-3 rounded-lg shadow flex flex-col gap-3">
-                    <div class="flex gap-3">
-                        {# Updated: Changed object-cover to object-contain, added p-1 for internal padding #}
-                        <div class="w-32 h-24 sm:w-36 sm:h-36 bg-gray-100 rounded overflow-hidden flex-shrink-0 border flex items-center justify-center p-1">
-                            {% if cart_item.item.images.first %}
-                                <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain">
-                            {% else %}
-                                <img src="{% static 'media/item_images/images.png' %}" alt="No image" class="w-full h-full object-contain">
-                            {% endif %}
-                        </div>
-
-                        <div class="flex-1 text-sm">
-                            <p class="font-semibold text-gray-800 leading-snug">{{ cart_item.item.name }}</p>
-                            {% if cart_item.size_variant %}
-                                <p class="text-gray-500 text-xs">Size: {{ cart_item.size_variant.size }}</p>
-                            {% endif %}
-                            <p class="mt-1 text-gray-700 text-sm">Price: ${{ cart_item.item.price|floatformat:2 }}</p>
-                            <p class="text-gray-800 font-medium text-sm">Total: ${{ cart_item.calculate_item_price|floatformat:2 }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center mt-1">
-                        {% if cart_item.quantity > cart_item.size_variant.quantity %}
-                            <p class="text-red-600 text-xs font-semibold">
-                                Only {{ cart_item.size_variant.quantity }} in stock
-                            </p>
-                        {% endif %}
-
-                        <div class="flex items-center gap-2">
-                            <form method="post" action="{% url 'cart:update_quantity' cart_item.id %}" class="flex items-center gap-1">
-                                {% csrf_token %}
-                                <input type="number" name="quantity" value="{{ cart_item.quantity }}"
-                                       min="1" max="{{ cart_item.size_variant.quantity }}"
-                                       class="w-12 text-center border rounded text-xs py-0.5">
-                                <button type="submit" class="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600">
-                                    Update
-                                </button>
-                            </form>
-                            <form method="post" action="{% url 'cart:remove_from_cart' cart_item.id %}">
-                                {% csrf_token %}
-                                <button class="text-red-500 hover:text-red-700 text-xs">
-                                    Remove
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+            {# Column 1: Cart Items List (takes 2/3 of space on md+) #}
+            <div class="md:col-span-2"> {# This div will span 2 columns on md and larger screens #}
+                <div class="flex justify-end mb-4 pr-2">
+                    <a href="{% url 'cart:clear_cart' %}" class="text-red-600 text-sm hover:underline">Clear Cart</a> {# Adjusted text-xs to text-sm #}
                 </div>
-            {% endfor %}
-        </div>
 
-        <div class="bg-gray-100 p-4 mt-6 rounded-lg">
-            <h2 class="text-base font-semibold mb-2">Summary</h2>
-            <p class="text-sm mb-1">Items: {{ cart_item_count }}</p>
-            <p class="text-sm font-medium mb-3">Total: ${{ total_price|floatformat:2 }}</p>
+                <div class="space-y-4">
+                    {% for cart_item in cart.items.all %}
+                        <div class="bg-white p-4 rounded-lg shadow-md flex flex-col sm:flex-row items-center gap-4 border border-gray-200"> {# Adjusted padding, added flex-row on sm+, items-center, gap-4, and border #}
+                            {# Image Container #}
+                            <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border flex items-center justify-center p-1"> {# Adjusted sizes #}
+                                {% if cart_item.item.images.first %}
+                                    <img src="{{ cart_item.item.images.first.image.url }}" alt="{{ cart_item.item.name }}" class="w-full h-full object-contain">
+                                {% else %}
+                                    <img src="{% static 'media/item_images/images.png' %}" alt="No image" class="w-full h-full object-contain">
+                                {% endif %}
+                            </div>
 
-            {% if can_checkout %}
-                <a href="{% url 'payment:checkout' %}" class="block w-full bg-yellow-400 text-black text-center font-semibold py-2 rounded hover:bg-yellow-500 transition">
-                    Checkout
-                </a>
-            {% else %}
-                <p class="text-red-600 text-sm mb-2">Fix stock issues before checkout.</p>
-                <button class="w-full bg-gray-400 text-white py-2 rounded cursor-not-allowed opacity-70">Checkout</button>
-            {% endif %}
-        </div>
+                            {# Item Details #}
+                            <div class="flex-1 text-center sm:text-left"> {# Centered text on mobile, left-aligned on sm+ #}
+                                <p class="font-semibold text-lg text-gray-800 leading-snug break-words mb-1">{{ cart_item.item.name }}</p> {# Adjusted font size #}
+                                {% if cart_item.size_variant %}
+                                    <p class="text-gray-600 text-sm mb-1">Size: {{ cart_item.size_variant.size }}</p>
+                                {% endif %}
+                                <p class="text-gray-700 text-base">Price: <span class="font-bold text-teal-600">${{ cart_item.item.price|floatformat:2 }}</span></p> {# Adjusted text size, added brand color #}
+                                <p class="text-gray-800 font-medium text-base">Item Total: <span class="font-bold">${{ cart_item.calculate_item_price|floatformat:2 }}</span></p> {# Adjusted text size #}
+                            </div>
+
+                            {# Quantity Controls and Remove Button #}
+                            <div class="flex flex-col items-center sm:items-end gap-2 mt-2 sm:mt-0"> {# Stacked on mobile, end-aligned on sm+ #}
+                                {% if cart_item.quantity > cart_item.size_variant.quantity %}
+                                    <p class="text-red-600 text-xs font-semibold">
+                                        Only {{ cart_item.size_variant.quantity }} in stock
+                                    </p>
+                                {% endif %}
+
+                                <form method="post" action="{% url 'cart:update_quantity' cart_item.id %}" class="flex items-center gap-1">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ cart_item.quantity }}"
+                                            min="1" max="{{ cart_item.size_variant.quantity }}"
+                                            class="w-16 text-center border border-gray-300 rounded-lg text-sm py-1 focus:outline-none focus:ring-2 focus:ring-teal-500"> {# Adjusted width, added border & focus styles #}
+                                    <button type="submit" class="bg-teal-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-teal-700 transition"> {# Adjusted padding and rounded #}
+                                        Update
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'cart:remove_from_cart' cart_item.id %}">
+                                    {% csrf_token %}
+                                    <button class="text-red-600 hover:text-red-700 text-sm font-medium"> {# Adjusted color and font #}
+                                        Remove Item
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Column 2: Cart Summary (takes 1/3 of space on md+) #}
+            <div class="md:col-span-1"> {# This div will span 1 column on md and larger screens #}
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 sticky top-24"> {# Added sticky top-24 for scrolling #}
+                    <h2 class="text-xl font-semibold mb-3">Order Summary</h2> {# Adjusted font size #}
+                    <p class="text-base mb-2">Items: <span class="font-medium">{{ cart_item_count }}</span></p> {# Adjusted text size #}
+                    <p class="text-lg font-bold mb-4">Total: <span class="text-indigo-600">${{ total_price|floatformat:2 }}</span></p> {# Adjusted text size, added brand color #}
+
+                    {% if can_checkout %}
+                        <a href="{% url 'payment:checkout' %}" class="block w-full bg-indigo-600 text-white text-center font-semibold py-3 rounded-lg hover:bg-indigo-700 transition"> {# Adjusted padding #}
+                            Proceed to Checkout
+                        </a>
+                    {% else %}
+                        <p class="text-red-600 text-sm mb-2">Fix stock issues before checkout.</p>
+                        <button class="w-full bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed opacity-70">Proceed to Checkout</button> {# Adjusted padding #}
+                    {% endif %}
+                </div>
+            </div>
+
+        </div> {# End of grid container #}
 
     {% else %}
-        <p class="text-center text-gray-500 mt-10">Your cart is empty.</p>
+        <p class="text-center text-gray-500 mt-10 text-lg">Your bag is empty.</p> {# Adjusted font size #}
+        <div class="text-center mt-6">
+            <a href="{% url 'item:items' %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                Continue Shopping
+                <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L13.586 11H3a1 1 0 110-2h10.586l-3.293-3.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}
