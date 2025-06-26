@@ -24,7 +24,7 @@ from core.views import index, contact
 
 urlpatterns = [
     path('', include('core.urls')),
-    path('items/', include('items.urls')),
+    path('items/', include('items.urls', namespace='items')),
     path('dashboard/', include('dashboard.urls')), 
     path('inbox/', include('conversation.urls')),
     path('cart/', include('cart.urls', namespace='cart')),

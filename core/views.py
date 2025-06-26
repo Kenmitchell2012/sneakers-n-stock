@@ -80,7 +80,6 @@ def index(request):
     inbox_unread_count = 0
 
     if request.user.is_authenticated:
-        # User-specific data for navbar/context
         conversations = Conversation.objects.filter(members__in=[request.user.id])
         conversation_count = conversations.count()
         cart, created = Cart.objects.get_or_create(user=request.user)
@@ -90,20 +89,19 @@ def index(request):
             user=request.user, notification_type='new_message', is_read=False
         ).count()
 
-    # --- TEMPORARY: NO ITEMS OR CATEGORIES FETCHED HERE ---
-    # Will fetch categories, featured items, etc. in Phase 2
-    # items = Items.objects.filter(is_sold=False).order_by('-created_at') # REMOVE
-    # categories = Category.objects.all() # REMOVE
-    # --- END TEMPORARY ---
+    # --- NEW: Fetch data for the new homepage ---
+    categories = Category.objects.all() # Fetch all categories
+    # Fetch some random featured items (e.g., 8 items)
+    featured_items = Items.objects.filter(is_sold=False).order_by('?')[:8]
+    # --- END NEW ---
 
     return render(request, 'core/index.html', {
         'conversation_count': conversation_count,
         'cart_item_count': cart_item_count,
         'unread_notifications_count': unread_notifications_count,
         'inbox_unread_count': inbox_unread_count,
-        # 'items': items, # REMOVE
-        # 'categories': categories, # REMOVE
-        # 'user': request.user, # No need to pass 'user' if it's already in request context
+        'categories': categories, # NEW: Pass categories to context
+        'featured_items': featured_items, # NEW: Pass featured items to context
     })
 
 def contact(request):

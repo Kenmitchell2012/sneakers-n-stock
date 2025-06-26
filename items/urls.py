@@ -13,6 +13,10 @@ urlpatterns = [
     path('', views.items, name='items'),
     path('live-search/', views.live_search_items, name='live_search'),
     path('new-arrivals/', views.new_arrivals_list, name='new_arrivals'), # NEW URL for new arrivals page
+    path('category/<int:pk>/', views.category_items, name='category_items'),
+    path('categories/', views.categories_list, name='categories'), # Lists all categories
+    path('categories/<int:pk>/', views.category_items, name='category_items'), # Lists items for a specific category
+    
 
 ]
 

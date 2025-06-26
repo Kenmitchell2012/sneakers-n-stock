@@ -17,6 +17,74 @@ from conversation.models import Conversation
 import logging
 logger = logging.getLogger(__name__)
 
+# --- View to list all categories ---
+def categories_list(request):
+    """
+    Displays a list of all item categories.
+    """
+    categories = Category.objects.all().order_by('name')
+
+    # Get common navbar context variables
+    conversation_count = 0
+    cart_item_count = 0
+    unread_notifications_count = 0
+    inbox_unread_count = 0
+
+    if request.user.is_authenticated:
+        conversations = Conversation.objects.filter(members__in=[request.user.id])
+        conversation_count = conversations.count()
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart.items.all())
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user, notification_type='new_message', is_read=False
+        ).count()
+
+    context = {
+        'categories': categories,
+        'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count,
+        'inbox_unread_count': inbox_unread_count,
+    }
+    return render(request, 'item/categories_list.html', context)
+
+
+# --- View to list items for a specific category ---
+def category_items(request, pk):
+    """
+    Displays items belonging to a specific category.
+    """
+    category = get_object_or_404(Category, pk=pk)
+    items = Items.objects.filter(category=category, is_sold=False).order_by('-created_at')
+
+    # Get common navbar context variables
+    conversation_count = 0
+    cart_item_count = 0
+    unread_notifications_count = 0
+    inbox_unread_count = 0
+
+    if request.user.is_authenticated:
+        conversations = Conversation.objects.filter(members__in=[request.user.id])
+        conversation_count = conversations.count()
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart.items.all())
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user, notification_type='new_message', is_read=False
+        ).count()
+
+
+    context = {
+        'category': category,
+        'items': items,
+        'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count,
+        'inbox_unread_count': inbox_unread_count,
+    }
+    return render(request, 'item/category_items.html', context)
+
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)

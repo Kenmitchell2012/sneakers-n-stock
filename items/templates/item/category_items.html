@@ -1,13 +1,13 @@
-{# item/new_arrivals.html - NEW CLEANED-UP NEW ARRIVALS PAGE #}
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}New Arrivals{% endblock %}
+{% block title %}{{ category.name }} Items{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8"> 
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-12">✨ Latest Drops</h1> 
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">{{ category.name }}</h1>
 
+    {% if items %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {% for item in items %}
             <div class="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300 overflow-hidden relative">
@@ -23,8 +23,8 @@
                     {% endif %}
 
                     {% if item.quantity > 0 %}
-                        <span class="absolute top-3 left-3 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full shadow"> {# Changed from red-100 to green-100 for "In Stock" #}
-                            In Stock: {{ item.quantity }}
+                        <span class="absolute top-3 left-3 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                            Only {{ item.quantity }} left!
                         </span>
                     {% else %}
                         <span class="absolute top-3 left-3 bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full shadow">
@@ -40,12 +40,10 @@
                     </div>
                 </a>
             </div>
-        {% empty %}
-            <div class="text-center col-span-full py-8">
-                <p class="text-xl text-gray-700 mb-4">No new arrivals to display yet.</p>
-                <a href="{% url 'item:new' %}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out transform hover:-translate-y-1">Add your first item!</a>
-            </div>
         {% endfor %}
     </div>
+    {% else %}
+        <p class="text-center text-gray-600 py-8">No items found in this category.</p>
+    {% endif %}
 </div>
 {% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}All Categories{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">All Categories</h1>
+
+    {% if categories %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {% for category in categories %}
+            <a href="{% url 'item:category_items' category.id %}" class="block bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-1 overflow-hidden">
+                <div class="p-4 text-center">
+                    <img src="{% static 'media/icons/category-placeholder.png' %}" alt="{{ category.name }}" class="w-24 h-24 mx-auto mb-3 object-contain">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ category.name }}</h3>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p class="text-center text-gray-600 py-8">No categories available yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

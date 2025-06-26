@@ -1,20 +1,221 @@
-{# core/index.html - TEMPORARY PLACEHOLDER #}
 {% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="relative py-20 bg-gray-900 text-white text-center">
-    <h1 class="text-5xl font-extrabold mb-4">Welcome to Sneakerz-N-Stock!</h1>
-    <p class="text-xl mb-8">Your source for the freshest kicks.</p>
-    <a href="{% url 'item:new_arrivals' %}" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300">
-        Shop New Arrivals
-    </a>
-</div>
+{# --- Hero Section: Banner, Welcome Text, Search, Mobile Nav Buttons --- #}
+<div class="relative mb-16">
+    {# Video for larger screens #}
+    <video autoplay muted loop playsinline class="w-full h-[70vh] object-cover hidden lg:block">
+        <source src="{% static 'media/item_images/home.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
 
-<div class="max-w-7xl mx-auto py-12 px-6">
-    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Explore Our Collection</h2>
-    <p class="text-center text-gray-600">Categories and featured items will appear here soon!</p>
+    {# Static image for tablet/desktop (md: breakpoint) #}
+    <img src="{% static 'media/item_images/noname.jpg' %}" alt="Banner"
+         class="w-full h-[70vh] object-cover hidden md:block lg:hidden">
+
+    {# Overlay text/search/buttons #}
+    <div class="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-6 bg-gray-900 bg-opacity-40">
+        <h1 class="text-4xl md:text-5xl font-extrabold drop-shadow-lg">Welcome to Sneakerz-N-Stock</h1>
+        <p class="mt-4 text-lg md:text-xl font-medium">Your freshest source for rare and hot sneakers</p>
+
+        {# Live Search Bar #}
+        <div class="relative mt-8 w-full max-w-xl mx-auto">
+            <input type="text" id="live-search-input" placeholder="Search store..."
+                   class="w-full p-4 rounded-full border border-gray-300 shadow-md text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow duration-200">
+            <div id="live-search-results" class="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto z-10 hidden">
+                {# Search results will be injected here by JavaScript #}
+            </div>
+        </div>
+
+        {# Mobile Nav Buttons (visible on mobile, hidden on md+) #}
+        <div class="flex flex-col sm:flex-row gap-4 mt-8 md:hidden">
+            <a href="{% url 'item:items' %}" class="w-full sm:w-auto px-8 py-4 bg-teal-600 text-white text-lg font-semibold rounded-full shadow-lg hover:bg-teal-700 transition duration-300 ease-in-out transform hover:-translate-y-1"> {# Corrected from items:items if it was #}
+                Shop All Sneakers
+            </a>
+            <a href="{% url 'item:categories' %}" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white text-lg font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1"> {# Corrected from items:categories if it was #}
+                Browse Categories
+            </a>
+        </div>
+    </div>
 </div>
+{# --- End Hero Section --- #}
+
+{# --- Categories Section --- #}
+<section class="max-w-7xl mx-auto px-6 py-12">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">👟 Shop by Category</h2>
+    {% if categories %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {% for category in categories %}
+            <a href="{% url 'item:category_items' category.id %}" class="block bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-1 overflow-hidden"> {# Corrected from items:category_items if it was #}
+                <div class="p-4 text-center">
+                    <img src="{% static 'media/icons/category-placeholder.png' %}" alt="{{ category.name }}" class="w-24 h-24 mx-auto mb-3 object-contain">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ category.name }}</h3>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p class="text-center text-gray-600 py-8">No categories available yet.</p>
+    {% endif %}
+    <div class="text-center mt-10">
+        <a href="{% url 'item:categories' %}" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-full text-lg transition duration-300"> {# Corrected from items:categories if it was #}
+            View All Categories
+        </a>
+    </div>
+</section>
+{# --- End Categories Section --- #}
+
+{# --- Featured Products Section --- #}
+<section class="max-w-7xl mx-auto px-6 py-12 bg-gray-100 rounded-xl mt-12">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">✨ Featured Products</h2>
+    {% if featured_items %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {% for item in featured_items %}
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300 overflow-hidden relative">
+                <a href="{% url 'item:detail' item.id %}" class="block"> {# Corrected from items:detail if it was #}
+                    {% if item.images.all %}
+                        <img src="{{ item.images.all.0.image.url }}"
+                            alt="{{ item.name }}"
+                            class="h-60 w-full object-contain bg-gray-100 p-2">
+                    {% else %}
+                        <img src="{% static 'media/item_images/images.png' %}"
+                            alt="Placeholder"
+                            class="h-60 w-full object-contain bg-gray-100 p-2">
+                    {% endif %}
+
+                    {% if item.quantity > 0 %}
+                        <span class="absolute top-3 left-3 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                            Only {{ item.quantity }} left!
+                        </span>
+                    {% else %}
+                        <span class="absolute top-3 left-3 bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                            Out of stock
+                        </span>
+                    {% endif %}
+
+                    <div class="p-4">
+                        <h3 class="text-md font-semibold text-gray-900 leading-snug line-clamp-2">
+                            {{ item.name }}
+                        </h3>
+                        <p class="text-sm text-gray-700 mt-2">${{ item.price|floatformat:2 }}</p>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p class="text-center text-gray-600 py-8">No featured items to display yet.</p>
+    {% endif %}
+    <div class="text-center mt-10">
+        <a href="{% url 'item:new_arrivals' %}" class="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300"> {# Corrected from items:new_arrivals if it was #}
+            Shop All New Arrivals
+        </a>
+    </div>
+</section>
+{# --- End Featured Products Section --- #}
+
+{# --- Value Proposition / About Section --- #}
+<section class="max-w-7xl mx-auto px-6 py-12 text-center mt-12">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8">Why Choose Sneakerz-N-Stock?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <i class="fa-solid fa-truck-fast text-4xl text-teal-600 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Fast & Reliable Shipping</h3>
+            <p class="text-gray-600">Get your fresh kicks delivered quickly and securely right to your door.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <i class="fa-solid fa-shoe-prints text-4xl text-indigo-600 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Exclusive Collections</h3>
+            <p class="text-gray-600">Discover rare and limited-edition sneakers you won't find anywhere else.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <i class="fa-solid fa-hands-holding-child text-4xl text-blue-600 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Customer Satisfaction</h3>
+            <p class="text-gray-600">Your happiness is our priority, with easy returns and dedicated support.</p>
+        </div>
+    </div>
+</section>
+{# --- End Value Proposition Section --- #}
+
+
+{# --- LIVE SEARCH JAVASCRIPT --- #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('live-search-input');
+        const searchResultsContainer = document.getElementById('live-search-results');
+        let debounceTimeout;
+
+        if (searchInput && searchResultsContainer) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                clearTimeout(debounceTimeout);
+
+                if (query.length > 1) {
+                    searchResultsContainer.classList.remove('hidden');
+                    debounceTimeout = setTimeout(() => {
+                        fetch(`{% url 'item:live_search' %}?query=${encodeURIComponent(query)}`) {# Corrected from itemslive_search #}
+                            .then(response => response.json())
+                            .then(data => {
+                                searchResultsContainer.innerHTML = '';
+                                if (data.length > 0) {
+                                    data.forEach(item => {
+                                        const resultItem = document.createElement('a');
+                                        resultItem.href = item.url;
+                                        resultItem.classList.add('flex', 'items-center', 'p-3', 'hover:bg-gray-100', 'transition-colors', 'duration-150');
+
+                                        const img = document.createElement('img');
+                                        img.src = item.image_url;
+                                        img.alt = item.name;
+                                        img.classList.add('w-12', 'h-12', 'object-contain', 'bg-gray-50', 'rounded-md', 'mr-3', 'border', 'border-gray-200');
+                                        resultItem.appendChild(img);
+
+                                        const textDiv = document.createElement('div');
+                                        textDiv.classList.add('flex-grow');
+                                        const nameP = document.createElement('p');
+                                        nameP.classList.add('font-semibold', 'text-gray-800', 'text-sm');
+                                        nameP.textContent = item.name;
+                                        const priceP = document.createElement('p');
+                                        priceP.classList.add('text-gray-600', 'text-xs');
+                                        priceP.textContent = `$${item.price.toFixed(2)}`;
+
+                                        textDiv.appendChild(nameP);
+                                        textDiv.appendChild(priceP);
+                                        resultItem.appendChild(textDiv);
+
+                                        searchResultsContainer.appendChild(resultItem);
+                                    });
+                                } else {
+                                    searchResultsContainer.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">No results found.</div>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching live search results:', error);
+                                searchResultsContainer.innerHTML = '<div class="p-3 text-red-500 text-sm text-center">Error loading results.</div>';
+                            });
+                    }, 300); // Debounce time: 300ms
+                } else {
+                    searchResultsContainer.classList.add('hidden');
+                    searchResultsContainer.innerHTML = '';
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!searchInput.contains(event.target) && !searchResultsContainer.contains(event.target)) {
+                    searchResultsContainer.classList.add('hidden');
+                }
+            });
+
+            searchInput.addEventListener('focus', function() {
+                if (this.value.trim().length > 2 && searchResultsContainer.children.length > 0) {
+                    searchResultsContainer.classList.remove('hidden');
+                }
+            });
+        }
+    });
+</script>
+{# --- END LIVE SEARCH JAVASCRIPT --- #}
 {% endblock %}
