@@ -103,6 +103,43 @@ def live_search_items(request):
     return JsonResponse(results, safe=False) # safe=False allows non-dict objects (like lists) to be returned
 # --- END LIVE SEARCH VIEW ---
 
+def new_arrivals_list(request):
+    """
+    Displays a list of new arrival items, adapted from the old homepage content.
+    """
+    # Initialize variables for authenticated-only data, so they always exist in context
+    conversation_count = 0
+    cart_item_count = 0
+    unread_notifications_count = 0
+    inbox_unread_count = 0
+
+    if request.user.is_authenticated:
+        conversations = Conversation.objects.filter(members__in=[request.user.id])
+        conversation_count = conversations.count()
+
+        inbox_unread_count = Notification.objects.filter(
+            user=request.user,
+            notification_type='new_message',
+            is_read=False
+        ).count()
+
+        unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart.items.all())
+
+    # This view's primary content is the new arrivals
+    items = Items.objects.filter(is_sold=False).order_by('-created_at') # Fetch all new arrivals
+
+    context = {
+        'items': items, # The new arrivals items
+        'conversation_count': conversation_count,
+        'cart_item_count': cart_item_count,
+        'unread_notifications_count': unread_notifications_count,
+        'inbox_unread_count': inbox_unread_count,
+    }
+    return render(request, 'item/new_arrivals.html', context)
+
 
 
 def detail(request, pk):

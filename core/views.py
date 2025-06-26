@@ -26,51 +26,85 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 
+# def index(request):
+#     # Initialize variables for all cases (authenticated or not)
+#     username = None
+#     user = None
+#     conversations = None # Initialize to None or empty queryset for consistency
+#     conversation_count = 0
+#     cart_item_count = 0
+#     unread_notifications_count = 0
+#     inbox_unread_count = 0  # <--- Initialize here!
+
+#     if request.user.is_authenticated:
+#         username = request.user.username
+#         user = get_object_or_404(User, username=username)
+#         conversations = Conversation.objects.filter(members__in=[request.user.id])
+#         conversation_count = conversations.count()
+
+#         # Get the cart item count for the authenticated user
+#         cart, created = Cart.objects.get_or_create(user=request.user)
+#         cart_items = cart.items.all()
+#         cart_item_count = sum(item.quantity for item in cart_items)
+
+#         # Calculate unread notifications count for authenticated users
+#         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+#         # Calculate inbox unread count for authenticated users
+#         inbox_unread_count = Notification.objects.filter(
+#             user=request.user,
+#             notification_type='new_message',
+#             is_read=False
+#         ).count()
+
+#     # Query items and categories (these don't depend on authentication status)
+#     items = Items.objects.filter(is_sold=False).order_by('-created_at') # Fetches all, not just [0:6] as in snippet
+#     categories = Category.objects.all()
+
+#     return render(request, 'core/index.html', {
+#         'inbox_unread_count': inbox_unread_count,
+#         'items': items,
+#         'categories': categories,
+#         'conversation_count': conversation_count,
+#         'user': user, # This might be None if not authenticated
+#         'cart_item_count': cart_item_count,
+#         'unread_notifications_count': unread_notifications_count,
+#     })
+
+
 def index(request):
     # Initialize variables for all cases (authenticated or not)
-    username = None
-    user = None
-    conversations = None # Initialize to None or empty queryset for consistency
     conversation_count = 0
     cart_item_count = 0
     unread_notifications_count = 0
-    inbox_unread_count = 0  # <--- Initialize here!
+    inbox_unread_count = 0
 
     if request.user.is_authenticated:
-        username = request.user.username
-        user = get_object_or_404(User, username=username)
+        # User-specific data for navbar/context
         conversations = Conversation.objects.filter(members__in=[request.user.id])
         conversation_count = conversations.count()
-
-        # Get the cart item count for the authenticated user
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_items = cart.items.all()
-        cart_item_count = sum(item.quantity for item in cart_items)
-
-        # Calculate unread notifications count for authenticated users
+        cart_item_count = sum(item_in_cart.quantity for item_in_cart in cart.items.all())
         unread_notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
-
-        # Calculate inbox unread count for authenticated users
         inbox_unread_count = Notification.objects.filter(
-            user=request.user,
-            notification_type='new_message',
-            is_read=False
+            user=request.user, notification_type='new_message', is_read=False
         ).count()
 
-    # Query items and categories (these don't depend on authentication status)
-    items = Items.objects.filter(is_sold=False).order_by('-created_at') # Fetches all, not just [0:6] as in snippet
-    categories = Category.objects.all()
+    # --- TEMPORARY: NO ITEMS OR CATEGORIES FETCHED HERE ---
+    # Will fetch categories, featured items, etc. in Phase 2
+    # items = Items.objects.filter(is_sold=False).order_by('-created_at') # REMOVE
+    # categories = Category.objects.all() # REMOVE
+    # --- END TEMPORARY ---
 
     return render(request, 'core/index.html', {
-        'inbox_unread_count': inbox_unread_count,
-        'items': items,
-        'categories': categories,
         'conversation_count': conversation_count,
-        'user': user, # This might be None if not authenticated
         'cart_item_count': cart_item_count,
         'unread_notifications_count': unread_notifications_count,
+        'inbox_unread_count': inbox_unread_count,
+        # 'items': items, # REMOVE
+        # 'categories': categories, # REMOVE
+        # 'user': request.user, # No need to pass 'user' if it's already in request context
     })
-
 
 def contact(request):
     

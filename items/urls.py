@@ -12,6 +12,8 @@ urlpatterns = [
     path('<int:pk>/edit/', views.edit, name='edit'),
     path('', views.items, name='items'),
     path('live-search/', views.live_search_items, name='live_search'),
+    path('new-arrivals/', views.new_arrivals_list, name='new_arrivals'), # NEW URL for new arrivals page
+
 ]
 
 if settings.DEBUG:
