@@ -15,11 +15,37 @@ import pymysql
 pymysql.install_as_MySQLdb()
 import os
 from dotenv import load_dotenv
-# Load environment variables from .env file
-load_dotenv()
+import json # <--- Import the json library
+
+# REMOVE THE DOTENV IMPORT
+# from dotenv import load_dotenv 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# === NEW METHOD: LOAD SECRETS FROM config.json ===
+# 1. Create the path to the config file
+config_path = os.path.join(BASE_DIR, 'config.json')
+
+# 2. Open the file and load the JSON data
+with open(config_path) as config_file:
+    config = json.load(config_file)
+# ================================================
+
+# ... (all your other settings) ...
+
+# =============================================================================
+# STRIPE SETTINGS
+# =============================================================================
+# Get secrets from the 'config' dictionary we loaded above
+STRIPE_PUBLISHABLE_KEY = config.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config.get('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = config.get('STRIPE_WEBHOOK_SECRET')
+
+# Stripe Redirect URLs
+STRIPE_SUCCESS_URL = '/payment/success/'
+STRIPE_CANCEL_URL = '/payment/cancel/'
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -80,7 +106,7 @@ LOGGING = {
     },
 }
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'e9aa-2605-a601-a577-3000-89b8-6fb4-398b-7cbd.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '9aa5-2605-a601-a577-3000-1533-1340-ab65-f663.ngrok-free.app']
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
@@ -138,26 +164,26 @@ WSGI_APPLICATION = 'puddle.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#         'OPTIONS': {
-#             'timeout': 30,  # Set timeout to 20 seconds or higher
-#         },
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql', # Changed engine to postgresql
-        'NAME': 'sneakerz_db',                     # Your database name
-        'USER': 'django_user',                     # Your database user
-        'PASSWORD': 'mysecretpgpassword',          # The password for that user
-        'HOST': '127.0.0.1',                       # Docker containers are accessed via localhost IP
-        'PORT': '5432',                            # Default PostgreSQL port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,  # Set timeout to 20 seconds or higher
+        },
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql', # Changed engine to postgresql
+#         'NAME': 'sneakerz_db',                     # Your database name
+#         'USER': 'django_user',                     # Your database user
+#         'PASSWORD': 'mysecretpgpassword',          # The password for that user
+#         'HOST': '127.0.0.1',                       # Docker containers are accessed via localhost IP
+#         'PORT': '5432',                            # Default PostgreSQL port
+#     }
+# }
 
 # DATABASES = {
 #     'default': {
@@ -221,18 +247,4 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# stripe settings
 
-# Stripe API Keys (for Development/Testing)
-# Get from environment variables
-STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
-STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET') # Also for webhook secret
-
-# Stripe Success and Cancel URLs (Relative to your domain)
-STRIPE_SUCCESS_URL = '/payment/success/'
-STRIPE_CANCEL_URL = '/payment/cancel/'
-
-# These are where Stripe redirects the user after checkout
-STRIPE_SUCCESS_URL = '/payment/success/'
-STRIPE_CANCEL_URL = '/payment/cancel/'

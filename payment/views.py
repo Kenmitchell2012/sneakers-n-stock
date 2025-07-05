@@ -170,39 +170,43 @@ def checkout(request):
 
 # --- Stripe Webhook Endpoint ---
 
-# payment/views.py (within your existing file)
-
-# ... (imports and other views remain the same) ...
-
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     event = None
 
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    # === THIS IS THE CRUCIAL DEBUGGING LINE ===
+    # It will print the secret that Django is actually using.
+    logger.info(f"DEBUG: SECRET BEING USED BY VIEW: '{settings.STRIPE_WEBHOOK_SECRET}'")
+    # ==========================================
+
     if not sig_header:
-        logger.error("Webhook Error: Missing Stripe signature header.")
+        logger.error("DEBUG_WEBHOOK_ERROR: Missing Stripe signature header. Returning 400.")
         return HttpResponse(status=400)
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            payload, sig_header, endpoint_secret
         )
+        logger.info(f"DEBUG_WEBHOOK_STAGE_1: Webhook event constructed successfully. Event type: {event['type']}. ID: {event['id']}") # NEW LOG
     except ValueError as e:
-        logger.error(f"Webhook Error: Invalid payload: {e}")
+        logger.error(f"DEBUG_WEBHOOK_ERROR: Invalid payload: {e}. Returning 400.", exc_info=True) # Added exc_info
         return HttpResponse(status=400)
     except stripe.error.SignatureVerificationError as e:
-        logger.error(f"Webhook Error: Invalid signature: {e}")
+        logger.error(f"DEBUG_WEBHOOK_ERROR: Invalid signature: {e}. Returning 400.", exc_info=True) # Added exc_info
         return HttpResponse(status=400)
     except Exception as e:
-        logger.error(f"Webhook Error: Unhandled exception during event construction: {e}")
+        logger.error(f"DEBUG_WEBHOOK_ERROR: Unhandled exception during event construction: {e}. Returning 400.", exc_info=True)
         return HttpResponse(status=400)
 
     if event is None:
-        logger.error("'event' object is None after construction. Payload might be malformed or unhandled.")
+        logger.error("DEBUG_WEBHOOK_ERROR: 'event' object is None after construction. Returning 400.")
         return HttpResponse(status=400)
 
-    # Handle the 'checkout.session.completed' event
+    # ... (the rest of your function remains the same) ...
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
 
@@ -210,49 +214,43 @@ def stripe_webhook(request):
         cart_id = session.metadata.get('cart_id')
         amount_total = session['amount_total'] / 100
 
-        logger.info(f"Checkout Session Completed event received for user {user_id}, cart {cart_id}, total {amount_total}, Payment Intent ID: {session.payment_intent}")
+        logger.info(f"DEBUG_WEBHOOK_STAGE_2: Checkout Session Completed event received for user {user_id}, cart {cart_id}, total {amount_total}, Payment Intent ID: {session.payment_intent}")
 
-        try:
+        try: # THIS IS THE TRY BLOCK FOR ORDER FULFILLMENT
+            logger.info("DEBUG_WEBHOOK_STAGE_3: Webhook processing initiated within transaction.")
             with transaction.atomic():
-                # 1. Prevent Duplicate Orders: Check if an order with this payment_intent_id already exists.
+                logger.info("DEBUG_WEBHOOK_STAGE_4: Transaction atomic block entered.")
+
+                # 1. Prevent Duplicate Orders
                 if Order.objects.filter(payment_intent_id=session.payment_intent).exists():
-                    logger.info(f"Order for payment_intent_id {session.payment_intent} already exists. Skipping duplicate fulfillment.")
+                    logger.info(f"DEBUG_WEBHOOK_STAGE_5: Order for payment_intent_id {session.payment_intent} already exists. Skipping duplicate fulfillment.")
                     return HttpResponse(status=200)
+                logger.info("DEBUG_WEBHOOK_STAGE_5: Duplicate order check passed.")
 
                 # 2. Get User (Required)
                 try:
                     user = User.objects.get(id=user_id)
                 except User.DoesNotExist:
-                    logger.error(f"User with ID {user_id} not found during webhook processing for session {session.id}. Cannot fulfill order.")
-                    return HttpResponse(status=400) # User must exist for order to be valid
+                    logger.error(f"DEBUG_WEBHOOK_ERROR: User with ID {user_id} not found during webhook processing for session {session.id}. Returning 400.", exc_info=True)
+                    return HttpResponse(status=400)
+                logger.info(f"DEBUG_WEBHOOK_STAGE_6: User {user.username} retrieved.")
 
                 # 3. Get Cart and its items (Robustly)
                 cart = None
                 cart_items = []
-                if cart_id: # Ensure cart_id exists from metadata
+                if cart_id:
                     try:
                         cart = Cart.objects.get(id=cart_id)
                         cart_items = cart.items.all()
                     except Cart.DoesNotExist:
-                        logger.warning(f"Cart with ID {cart_id} for user {user_id} not found during webhook processing. "
-                                       f"This might happen if the cart was already cleared/deleted. Proceeding without cart items for order details.")
-                        # If cart is gone, we can't use cart_items to populate order items.
-                        # This scenario is problematic for accurate order item creation.
-                        # Ideally, cart items should be fetched from Stripe's line_items if possible,
-                        # but your current model relies on the cart_items.
-
+                        logger.warning(f"DEBUG_WEBHOOK_WARNING: Cart with ID {cart_id} for user {user_id} not found during webhook processing. Returning 200.", exc_info=True) # Added exc_info
+                        return HttpResponse(status=200) # Assuming it was already processed or invalid state
                 if not cart_items.exists():
-                     logger.warning(f"Cart {cart_id} for user {user_id} is empty or not found during webhook processing. "
-                                    f"Cannot create OrderItems without cart contents. Assuming already processed or invalid state for this webhook.")
-                     # If the cart is empty or not found and thus no cart_items, and no order exists yet
-                     # (checked by payment_intent_id earlier), this indicates a problem.
-                     # We return 200 to acknowledge the webhook, but the order won't be fully created.
-                     # If you need to create order items even if the cart is gone, you'd parse Stripe's session.line_items.
-                     # For now, we're assuming cart_items is the source.
-                     return HttpResponse(status=200)
+                        logger.warning(f"DEBUG_WEBHOOK_WARNING: Cart {cart_id} for user {user_id} is empty or not found during webhook processing. Cannot create OrderItems. Returning 200.", exc_info=True) # Added exc_info
+                        return HttpResponse(status=200) # Assuming already processed or invalid state
+                logger.info("DEBUG_WEBHOOK_STAGE_7: Cart and items retrieved/checked.")
 
-
-                # 4. Extract Shipping Details (Robustly from Stripe data or metadata)
+                # 4. Extract Shipping Details
                 shipping_full_name = session.metadata.get('shipping_full_name', 'N/A')
                 shipping_email = session.metadata.get('shipping_email', session.customer_details.get('email', 'N/A'))
                 shipping_phone_number = session.metadata.get('shipping_phone_number', '')
@@ -282,6 +280,7 @@ def stripe_webhook(request):
                     if session.metadata.get('shipping_country'): shipping_address_parts.append(session.metadata.get('shipping_country'))
 
                 shipping_address_str = "\n".join(filter(None, shipping_address_parts)) or "No shipping address provided."
+                logger.info("DEBUG_WEBHOOK_STAGE_8: Shipping details extracted.")
 
 
                 # 5. Create the Order
@@ -296,7 +295,8 @@ def stripe_webhook(request):
                     payment_intent_id=session.payment_intent,
                     stripe_checkout_session_id=session.id
                 )
-                create_order.save() # <-- If you have a post_save signal here, it will fire
+                create_order.save()
+                logger.info(f"DEBUG_WEBHOOK_STAGE_9: Order {create_order.id} created.")
 
                 # 6. Create Order Items and Update Stock
                 for cart_item in cart_items:
@@ -317,25 +317,27 @@ def stripe_webhook(request):
                         )
                         order_item.save()
                     else:
-                        logger.error(f"Overselling detected! Item {cart_item.item.name} (Size {size_variant.size}) out of stock during webhook fulfillment for Order {create_order.id}, Cart {cart.id}")
-                        # This scenario should ideally be caught before checkout, but if it happens,
-                        # you might need to implement a refund or manual intervention here.
-                        pass
+                        logger.error(f"DEBUG_WEBHOOK_ERROR: Overselling detected! Item {cart_item.item.name} (Size {size_variant.size}) out of stock during webhook fulfillment for Order {create_order.id}, Cart {cart.id}", exc_info=True) # Added exc_info
+                        pass # Consider more robust error handling/refund here
+                logger.info("DEBUG_WEBHOOK_STAGE_10: Order items created and stock updated.")
 
-                # 7. Clear the User's Cart Items (but not the cart itself)
-                if cart: # Only if cart object was successfully retrieved
+
+                # 7. Clear the User's Cart Items
+                if cart:
                     cart.items.all().delete()
+                logger.info("DEBUG_WEBHOOK_STAGE_11: Cart items cleared.")
 
-                logger.info(f"Order {create_order.id} for user {user.username} fulfilled successfully via webhook.")
+                logger.info(f"DEBUG_WEBHOOK_SUCCESS: Order {create_order.id} for user {user.username} fulfilled successfully via webhook. Returning 200.")
                 return HttpResponse(status=200)
 
         except Exception as e:
-            logger.error(f"Error during webhook order processing for user {user_id}, cart {cart_id}: {e}", exc_info=True)
+            logger.error(f"DEBUG_WEBHOOK_ERROR: Unhandled exception during order fulfillment for user {user_id}, cart {cart_id}: {e}", exc_info=True)
+            # Log full traceback here to pinpoint the exact line of failure
             return HttpResponse(status=500)
 
     # Log and respond to unhandled event types
     else:
-        logger.warning(f"Unhandled webhook event type: {event['type']}")
+        logger.warning(f"DEBUG_WEBHOOK_WARNING: Unhandled webhook event type: {event['type']}. Returning 200.")
         return HttpResponse(status=200)
 
 # --- User-Facing Payment Status Views ---
@@ -739,7 +741,7 @@ def order_detail(request, order_id):
                 # Only send a separate tracking update notification IF:
                 # 1. Tracking was updated (tracking_updated is true)
                 # 2. Status was NOT just set to 'shipped' (status_updated is false)
-                #    OR, if status was updated, the old status wasn't already 'shipped'
+                #   OR, if status was updated, the old status wasn't already 'shipped'
                 # This prevents duplicate notifications if shipped status and tracking are set simultaneously
                 if tracking_updated:
                     if not status_updated or (status_updated and old_status != 'shipped'):
@@ -767,16 +769,7 @@ def order_detail(request, order_id):
         'order': order,
         'order_items': order_items_queryset,
         'items_total': items_total,
-        # 'items': items, # Only include if you actively use it in the GET context
-    }
-    return render(request, 'payment/order_detail.html', context)
-
-    # For GET requests, render the detail page
-    context = {
-        'order': order,
-        'order_items': order_items_queryset,
         'items': items, # Ensure 'items' is defined for GET request context if needed in template
-        'items_total': items_total,
     }
     return render(request, 'payment/order_detail.html', context)
 
@@ -822,3 +815,9 @@ def not_shipped_dashboard(request):
         'total_pending_sales_value': total_pending_sales_value,
     }
     return render(request, 'payment/not_shipped_dashboard.html', context)
+
+
+
+
+
+

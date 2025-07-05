@@ -1,3 +1,4 @@
+{# core/index.html #}
 {% extends 'core/base.html' %}
 {% load static %}
 
@@ -5,37 +6,47 @@
 
 {% block content %}
 {# --- Hero Section: Banner, Welcome Text, Search, Mobile Nav Buttons --- #}
-<div class="relative mb-16">
-    {# Video for larger screens #}
-    <video autoplay muted loop playsinline class="w-full h-[70vh] object-cover hidden lg:block">
-        <source src="{% static 'media/item_images/home.mp4' %}" type="video/mp4">
+{# NEW: min-h for flexible height, responsive py-* for internal vertical padding #}
+<div class="relative min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] flex flex-col justify-center items-center text-white text-center mb-16 px-6 py-10 md:py-12 lg:py-16">
+    {# Background elements - ORDER MATTERS for absolute positioning: later elements draw on top #}
+
+    {# This div provides the background color on mobile, effectively replacing the image/video #}
+    {# On MD and larger, it's just a transparent block so the image/video below can show #}
+    <div class="absolute inset-0 w-full h-full bg-gray-900 md:bg-transparent"></div> {# NEW: bg-gray-900 on mobile, transparent on md+ #}
+
+    {# Static image: Now shown from MD up, serves as a fallback behind the video #}
+    <img src="{% static 'media/item_images/noname.jpg' %}" alt="Banner"
+         class="absolute inset-0 w-full h-full object-cover hidden md:block"> {# NEW: Removed lg:hidden. Now shows on md and up. #}
+
+    {# Video: Only shown on LG up, will cover the static image when active #}
+    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover hidden lg:block">
+        <source src="{% static 'media/media/item_images/home.mp4' %}" type="video/mp4"> {# Corrected static path if needed, usually just static path for media files #}
         Your browser does not support the video tag.
     </video>
 
-    {# Static image for tablet/desktop (md: breakpoint) #}
-    <img src="{% static 'media/item_images/noname.jpg' %}" alt="Banner"
-         class="w-full h-[70vh] object-cover hidden md:block lg:hidden">
+    {# Background overlay for text readability (always on top of image/video/solid background) #}
+    <div class="absolute inset-0 w-full h-full bg-gray-900 bg-opacity-70"></div> {# NEW: This specific overlay now sits on top of everything for text contrast #}
 
-    {# Overlay text/search/buttons #}
-    <div class="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-6 bg-gray-900 bg-opacity-40">
-        <h1 class="text-4xl md:text-5xl font-extrabold drop-shadow-lg">Welcome to Sneakerz-N-Stock</h1>
-        <p class="mt-4 text-lg md:text-xl font-medium">Your freshest source for rare and hot sneakers</p>
+    {# Content Overlay (h1, p, search, buttons) #}
+    <div class="relative z-10 flex flex-col items-center space-y-4">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold drop-shadow-lg">Welcome to Sneakerz-N-Stock</h1>
+        <p class="text-base sm:text-lg md:text-xl font-medium">Your freshest source for rare and hot sneakers</p>
 
         {# Live Search Bar #}
-        <div class="relative mt-8 w-full max-w-xl mx-auto">
+        <div class="relative w-full max-w-xl mx-auto mt-4">
             <input type="text" id="live-search-input" placeholder="Search store..."
-                   class="w-full p-4 rounded-full border border-gray-300 shadow-md text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow duration-200">
+                   class="w-full p-3 sm:p-4 rounded-full border border-gray-300 shadow-md text-gray-800 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow duration-200">
             <div id="live-search-results" class="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto z-10 hidden">
                 {# Search results will be injected here by JavaScript #}
             </div>
         </div>
 
         {# Mobile Nav Buttons (visible on mobile, hidden on md+) #}
-        <div class="flex flex-col sm:flex-row gap-4 mt-8 md:hidden">
-            <a href="{% url 'item:items' %}" class="w-full sm:w-auto px-8 py-4 bg-teal-600 text-white text-lg font-semibold rounded-full shadow-lg hover:bg-teal-700 transition duration-300 ease-in-out transform hover:-translate-y-1"> {# Corrected from items:items if it was #}
+        <div class="flex flex-col sm:flex-row gap-4 mt-6 md:hidden">
+            <a href="{% url 'item:items' %}" class="w-full sm:w-auto px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-full shadow-lg hover:bg-teal-700 transition duration-300 ease-in-out transform hover:-translate-y-1">
                 Shop All Sneakers
             </a>
-            <a href="{% url 'item:categories' %}" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white text-lg font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1"> {# Corrected from items:categories if it was #}
+            <a href="{% url 'item:categories' %}" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white text-base font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1">
                 Browse Categories
             </a>
         </div>
@@ -49,7 +60,7 @@
     {% if categories %}
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {% for category in categories %}
-            <a href="{% url 'item:category_items' category.id %}" class="block bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-1 overflow-hidden"> {# Corrected from items:category_items if it was #}
+            <a href="{% url 'item:category_items' category.id %}" class="block bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-1 overflow-hidden">
                 <div class="p-4 text-center">
                     <img src="{% static 'media/icons/category-placeholder.png' %}" alt="{{ category.name }}" class="w-24 h-24 mx-auto mb-3 object-contain">
                     <h3 class="text-lg font-semibold text-gray-800">{{ category.name }}</h3>
@@ -61,7 +72,7 @@
         <p class="text-center text-gray-600 py-8">No categories available yet.</p>
     {% endif %}
     <div class="text-center mt-10">
-        <a href="{% url 'item:categories' %}" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-full text-lg transition duration-300"> {# Corrected from items:categories if it was #}
+        <a href="{% url 'item:categories' %}" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-full text-lg transition duration-300">
             View All Categories
         </a>
     </div>
@@ -75,7 +86,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {% for item in featured_items %}
             <div class="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300 overflow-hidden relative">
-                <a href="{% url 'item:detail' item.id %}" class="block"> {# Corrected from items:detail if it was #}
+                <a href="{% url 'item:detail' item.id %}" class="block">
                     {% if item.images.all %}
                         <img src="{{ item.images.all.0.image.url }}"
                             alt="{{ item.name }}"
@@ -110,7 +121,7 @@
         <p class="text-center text-gray-600 py-8">No featured items to display yet.</p>
     {% endif %}
     <div class="text-center mt-10">
-        <a href="{% url 'item:new_arrivals' %}" class="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300"> {# Corrected from items:new_arrivals if it was #}
+        <a href="{% url 'item:new_arrivals' %}" class="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300">
             Shop All New Arrivals
         </a>
     </div>
@@ -141,7 +152,7 @@
 {# --- End Value Proposition Section --- #}
 
 
-{# --- LIVE SEARCH JAVASCRIPT --- #}
+{# --- LIVE SEARCH JAVASCRIPT (remains the same) --- #}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('live-search-input');
@@ -157,7 +168,7 @@
                 if (query.length > 1) {
                     searchResultsContainer.classList.remove('hidden');
                     debounceTimeout = setTimeout(() => {
-                        fetch(`{% url 'item:live_search' %}?query=${encodeURIComponent(query)}`) {# Corrected from itemslive_search #}
+                        fetch(`{% url 'item:live_search' %}?query=${encodeURIComponent(query)}`)
                             .then(response => response.json())
                             .then(data => {
                                 searchResultsContainer.innerHTML = '';
